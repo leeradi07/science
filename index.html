@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>여러 기관과 관련있는 질병을 찾아라!</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f0fdf4;
+            background-image: radial-gradient(#bbf7d0 1px, transparent 1px);
+            background-size: 20px 20px;
+            overflow-x: hidden;
+            touch-action: none; /* 방해되는 브라우저 기본 터치 액션(스크롤 등) 방지 */
+        }
+        
+        .title-font {
+            font-family: 'Jua', sans-serif;
+        }
+
+        /* 요소 선택 방지 (드래그 시 텍스트 블록 방지) */
+        .select-none {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* 연결점(Dot) 애니메이션 */
+        .dot {
+            transition: transform 0.2s;
+        }
+        .card:hover .dot {
+            transform: scale(1.5);
+        }
+
+        /* 오답 시 흔들림 애니메이션 */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px) rotate(-2deg); }
+            50% { transform: translateX(5px) rotate(2deg); }
+            75% { transform: translateX(-5px) rotate(-2deg); }
+        }
+        .shake-animation {
+            animation: shake 0.4s ease-in-out;
+            background-color: #fee2e2 !important; /* 붉은색 깜빡임 */
+        }
+
+        /* 정답 시 팝업 애니메이션 */
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .pop-animation {
+            animation: pop 0.3s ease-out;
+            background-color: #dcfce7 !important; /* 초록색 활성화 */
+            border-color: #22c55e !important;
+            box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.5) !important;
+        }
+
+        /* 캔버스 설정 */
+        #line-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* 캔버스가 클릭 이벤트를 막지 않도록 설정 */
+            z-index: 10;
+        }
+
+        /* 반응형 스크롤바 */
+        .scrollable-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        .scrollable-list::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+            border-radius: 10px;
+        }
+        .scrollable-list::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 10px;
+        }
+        .scrollable-list::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+</head>
+<body class="h-screen w-full flex flex-col items-center justify-start py-2 sm:py-4 select-none relative overflow-x-hidden">
+
+    <header class="w-full max-w-6xl px-4 flex flex-col items-center z-20 mb-2 sm:mb-6">
+        <h1 class="title-font text-2xl sm:text-3xl md:text-4xl text-emerald-800 text-center drop-shadow-sm mb-2">
+            🩺 여러 기관과 관련있는 질병을 찾아라!
+        </h1>
+        <p class="text-gray-600 text-xs sm:text-sm text-center bg-white/80 px-4 py-1.5 rounded-full shadow-sm">
+            위쪽의 <strong>우리 몸 기관</strong>에서 알맞은 <strong>질병</strong>으로 선을 그어 연결해보세요!
+        </p>
+    </header>
+
+    <main class="w-full max-w-6xl flex-1 flex flex-col justify-start px-2 sm:px-8 z-20 relative gap-10 sm:gap-14 mt-2">
+        
+        <!-- 위쪽: 기관 목록 -->
+        <div class="w-full grid grid-cols-4 gap-2 sm:gap-6" id="organ-list">
+            <!-- 기관 카드가 자바스크립트에 의해 여기에 생성됩니다. -->
+        </div>
+
+        <!-- 아래쪽: 질병 목록 -->
+        <div class="w-full grid grid-cols-3 md:grid-cols-4 gap-2 sm:gap-4 overflow-y-auto pb-6 px-2" id="disease-list">
+            <!-- 질병 카드가 자바스크립트에 의해 무작위로 섞여서 생성됩니다. -->
+        </div>
+
+    </main>
+
+    <!-- 연결 선을 그릴 캔버스 -->
+    <canvas id="line-canvas"></canvas>
+
+    <div id="success-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-11/12 text-center shadow-2xl transform scale-95 transition-transform duration-300" id="modal-content">
+            <div class="text-6xl mb-4">🏆</div>
+            <h2 class="title-font text-3xl text-emerald-600 mb-2">최고의 꼬마 의사!</h2>
+            <p class="text-gray-600 mb-6">모든 기관과 질병을 완벽하게 연결했어요!<br>우리 몸에 대해 아주 잘 알고 있군요.</p>
+            <button onclick="resetGame()" class="title-font text-xl bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-3 rounded-full shadow-lg transition-colors active:scale-95">
+                다시 도전하기
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 데이터 정의
+        const organs = [
+            {
+                id: 'digestion',
+                name: '소화 기관',
+                color: '#f97316', // Orange
+                bgColor: 'bg-orange-50',
+                borderColor: 'border-orange-400',
+                icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-10 h-10 sm:w-14 sm:h-14 text-orange-500"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21c-4.97 0-9-4.03-9-9 0-3.32 1.8-6.22 4.5-7.79.82-.47 1.45-1.15 1.76-2.05l.38-1.07c.22-.61 1.05-.61 1.27 0l.38 1.07c.31.9.94 1.58 1.76 2.05A8.966 8.966 0 0112 12c1.47 0 2.85-.35 4.09-.97a2 2 0 012.82 1.35c.41 1.7.63 3.49.49 5.31C18.87 19.8 15.68 21 12 21z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M9 14.5a3.5 3.5 0 006 0"></path></svg>`
+            },
+            {
+                id: 'circulation',
+                name: '순환 기관',
+                color: '#ef4444', // Red
+                bgColor: 'bg-red-50',
+                borderColor: 'border-red-400',
+                icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-10 h-10 sm:w-14 sm:h-14 text-red-500"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>`
+            },
+            {
+                id: 'respiration',
+                name: '호흡 기관',
+                color: '#3b82f6', // Blue
+                bgColor: 'bg-blue-50',
+                borderColor: 'border-blue-400',
+                icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-10 h-10 sm:w-14 sm:h-14 text-blue-500"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m0 0a3 3 0 00-3 3v2a3 3 0 006 0V8a3 3 0 00-3-3zM8.5 12A3.5 3.5 0 005 15.5V18a2 2 0 002 2h2m7-8A3.5 3.5 0 0119 15.5V18a2 2 0 01-2 2h-2"></path><path stroke-linecap="round" stroke-linejoin="round" d="M10 16a2 2 0 00-4 0m8 0a2 2 0 00-4 0"></path></svg>`
+            },
+            {
+                id: 'excretion',
+                name: '배설 기관',
+                color: '#eab308', // Yellow/Gold
+                bgColor: 'bg-yellow-50',
+                borderColor: 'border-yellow-400',
+                icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-10 h-10 sm:w-14 sm:h-14 text-yellow-500"><path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>`
+            }
+        ];
+
+        const diseasesData = [
+            { id: 'd1', organId: 'digestion', name: '장염', desc: '배가 아프고 설사를 해요' },
+            { id: 'd2', organId: 'digestion', name: '식중독', desc: '상한 음식을 먹어서 토해요' },
+            { id: 'd3', organId: 'digestion', name: '변비', desc: '화장실 가기가 힘들어요' },
+            
+            { id: 'd4', organId: 'circulation', name: '빈혈', desc: '갑자기 어지러움을 느껴요' },
+            { id: 'd5', organId: 'circulation', name: '고혈압', desc: '혈관의 압력이 너무 높아요' },
+            { id: 'd6', organId: 'circulation', name: '심장병', desc: '피를 펌프질하는 곳이 아파요' },
+            
+            { id: 'd7', organId: 'respiration', name: '감기/독감', desc: '기침, 콧물이 나고 열이 나요' },
+            { id: 'd8', organId: 'respiration', name: '천식', desc: '숨을 쉴 때 쌕쌕거려요' },
+            { id: 'd9', organId: 'respiration', name: '폐렴', desc: '폐에 염증이 생겨 기침이 심해요' },
+            
+            { id: 'd10', organId: 'excretion', name: '방광염', desc: '오줌을 눌 때 아파요' },
+            { id: 'd11', organId: 'excretion', name: '콩팥염', desc: '노폐물을 못 걸러 몸이 부어요' },
+            { id: 'd12', organId: 'excretion', name: '요로결석', desc: '소변 길에 돌이 생겨 너무 아파요' }
+        ];
+
+        // 상태 변수
+        let diseases = [];
+        let connectedLines = []; // { startId, endId, color }
+        let currentDrawing = null; // { startId, x, y, color }
+        let isDrawing = false;
+        
+        // DOM 요소
+        const organListEl = document.getElementById('organ-list');
+        const diseaseListEl = document.getElementById('disease-list');
+        const canvas = document.getElementById('line-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Web Audio API를 활용한 간단한 효과음 생성 (외부 파일 의존성 제거)
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function playSound(type) {
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            if (type === 'success') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+                osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2); // G5
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'fail') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.2);
+            } else if (type === 'win') {
+                osc.type = 'square';
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime + (i*0.1));
+                });
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.8);
+            }
+        }
+
+        function shuffle(array) {
+            let currentIndex = array.length,  randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            drawAll();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        function renderUI() {
+            organListEl.innerHTML = '';
+            diseaseListEl.innerHTML = '';
+
+            // 기관 카드 생성
+            organs.forEach(organ => {
+                const div = document.createElement('div');
+                div.className = `card organ-card flex flex-col items-center justify-center p-2 sm:p-4 rounded-2xl border-2 ${organ.borderColor} ${organ.bgColor} shadow-sm cursor-pointer relative transition-transform hover:-translate-y-1 h-24 sm:h-36`;
+                div.id = `organ-${organ.id}`;
+                div.dataset.id = organ.id;
+                div.dataset.color = organ.color;
+                
+                div.innerHTML = `
+                    <div class="flex flex-col items-center gap-1 sm:gap-3 pointer-events-none w-full text-center">
+                        <div class="bg-white p-1.5 sm:p-3 rounded-full shadow-inner border border-gray-100 flex items-center justify-center">${organ.icon}</div>
+                        <h2 class="title-font text-sm sm:text-2xl text-gray-800">${organ.name}</h2>
+                    </div>
+                    <div class="dot absolute -bottom-3 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full border-4 border-white shadow-md z-10" style="background-color: ${organ.color}"></div>
+                `;
+                
+                // 마우스/터치 시작 이벤트
+                div.addEventListener('mousedown', handleStart);
+                div.addEventListener('touchstart', handleStart, {passive: false});
+                
+                organListEl.appendChild(div);
+            });
+
+            // 질병 카드 생성 (섞어서)
+            diseases = shuffle([...diseasesData]);
+            diseases.forEach(disease => {
+                const div = document.createElement('div');
+                div.className = `disease-card flex flex-col justify-center items-center text-center p-2 sm:p-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm relative transition-all duration-300 h-20 sm:h-28 hover:shadow-md hover:-translate-y-1`;
+                div.id = `disease-${disease.id}`;
+                div.dataset.id = disease.id;
+                div.dataset.organId = disease.organId;
+                
+                div.innerHTML = `
+                    <div class="dot absolute -top-3 left-1/2 -translate-x-1/2 w-5 h-5 sm:w-6 sm:h-6 rounded-full border-4 border-white shadow-md bg-gray-300 z-10 indicator-dot transition-colors duration-300"></div>
+                    <h3 class="title-font text-sm sm:text-xl text-gray-800">${disease.name}</h3>
+                    <p class="text-[10px] sm:text-sm text-gray-500 mt-1 leading-tight w-full break-keep hidden sm:block">${disease.desc}</p>
+                `;
+                diseaseListEl.appendChild(div);
+            });
+            
+            resizeCanvas();
+        }
+
+        function handleStart(e) {
+            e.preventDefault(); // 기본 터치/클릭 동작 방지
+            const organCard = e.currentTarget;
+            const organId = organCard.dataset.id;
+            const color = organCard.dataset.color;
+            
+            // 시각적 피드백
+            organCard.classList.add('scale-95');
+
+            isDrawing = true;
+            
+            // 좌표 추출 (마우스 또는 터치)
+            const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+            const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+
+            currentDrawing = {
+                startId: organId,
+                x: clientX,
+                y: clientY,
+                color: color
+            };
+
+            drawAll();
+        }
+
+        function handleMove(e) {
+            if (!isDrawing) return;
+            e.preventDefault(); // 스크롤 방지
+
+            const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+            const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+
+            currentDrawing.x = clientX;
+            currentDrawing.y = clientY;
+
+            drawAll();
+        }
+
+        function handleEnd(e) {
+            if (!isDrawing) return;
+            isDrawing = false;
+            
+            // 카드 스케일 원상복구
+            const organCard = document.getElementById(`organ-${currentDrawing.startId}`);
+            if(organCard) organCard.classList.remove('scale-95');
+
+            const clientX = e.type.includes('mouse') ? e.clientX : e.changedTouches[0].clientX;
+            const clientY = e.type.includes('mouse') ? e.clientY : e.changedTouches[0].clientY;
+
+            // 터치/마우스가 끝난 지점의 요소 찾기
+            // elementFromPoint를 사용하여 드롭한 위치의 요소를 정확히 찾음
+            const targetEl = document.elementFromPoint(clientX, clientY);
+            
+            // 가장 가까운 disease-card 부모 찾기
+            const diseaseCard = targetEl ? targetEl.closest('.disease-card') : null;
+
+            if (diseaseCard) {
+                checkMatch(currentDrawing.startId, diseaseCard, currentDrawing.color);
+            }
+
+            currentDrawing = null;
+            drawAll();
+        }
+
+        // 이벤트 리스너 등록 (문서 전체에 이동/종료 이벤트 등록하여 드래그 중 이탈 방지)
+        document.addEventListener('mousemove', handleMove, {passive: false});
+        document.addEventListener('touchmove', handleMove, {passive: false});
+        document.addEventListener('mouseup', handleEnd);
+        document.addEventListener('touchend', handleEnd);
+
+
+        function checkMatch(organId, diseaseCard, color) {
+            const diseaseId = diseaseCard.dataset.id;
+            const correctOrganId = diseaseCard.dataset.organId;
+
+            // 이미 연결된 질병인지 확인
+            if (connectedLines.find(line => line.endId === diseaseId)) {
+                return; // 이미 연결됨
+            }
+
+            if (organId === correctOrganId) {
+                // 정답!
+                playSound('success');
+                connectedLines.push({
+                    startId: organId,
+                    endId: diseaseId,
+                    color: color
+                });
+                
+                // 시각적 피드백 적용
+                diseaseCard.classList.add('pop-animation');
+                diseaseCard.classList.remove('border-gray-200');
+                const dot = diseaseCard.querySelector('.indicator-dot');
+                dot.style.backgroundColor = color;
+                dot.classList.remove('bg-gray-300');
+                dot.classList.add('border-white', 'scale-125');
+
+                checkGameComplete();
+            } else {
+                // 오답!
+                playSound('fail');
+                diseaseCard.classList.remove('shake-animation'); // 리셋
+                void diseaseCard.offsetWidth; // 리플로우 강제 발생 (애니메이션 재시작 위함)
+                diseaseCard.classList.add('shake-animation');
+            }
+        }
+
+        function drawAll() {
+            // 캔버스 초기화
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 선 스타일 설정
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            // 1. 이미 연결된 선 그리기
+            connectedLines.forEach(line => {
+                drawConnectionLine(line.startId, line.endId, line.color);
+            });
+
+            // 2. 현재 그리고 있는 선 그리기
+            if (isDrawing && currentDrawing) {
+                const startEl = document.getElementById(`organ-${currentDrawing.startId}`);
+                if (startEl) {
+                    const startDot = startEl.querySelector('.dot');
+                    const rect = startDot.getBoundingClientRect();
+                    const startX = rect.left + rect.width / 2;
+                    const startY = rect.top + rect.height / 2;
+
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    
+                    // 곡선 효과를 위해 베지에 곡선 사용 (상하 연결)
+                    const cpY = startY + (currentDrawing.y - startY) / 2;
+                    ctx.quadraticCurveTo(startX, cpY, currentDrawing.x, currentDrawing.y);
+                    
+                    ctx.strokeStyle = currentDrawing.color;
+                    ctx.setLineDash([8, 8]); // 그리는 중에는 점선
+                    ctx.stroke();
+                    ctx.setLineDash([]); // 원상복구
+                }
+            }
+        }
+
+        function drawConnectionLine(organId, diseaseId, color) {
+            const startEl = document.getElementById(`organ-${organId}`);
+            const endEl = document.getElementById(`disease-${diseaseId}`);
+            
+            if (startEl && endEl) {
+                const startDot = startEl.querySelector('.dot');
+                const endDot = endEl.querySelector('.dot');
+                
+                const sRect = startDot.getBoundingClientRect();
+                const eRect = endDot.getBoundingClientRect();
+                
+                const startX = sRect.left + sRect.width / 2;
+                const startY = sRect.top + sRect.height / 2;
+                const endX = eRect.left + eRect.width / 2;
+                const endY = eRect.top + eRect.height / 2;
+
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                
+                // 부드러운 S자 곡선 (상하 연결 베지에 곡선)
+                const cp1X = startX;
+                const cp1Y = startY + (endY - startY) / 2;
+                const cp2X = endX;
+                const cp2Y = startY + (endY - startY) / 2;
+                
+                ctx.bezierCurveTo(cp1X, cp1Y, cp2X, cp2Y, endX, endY);
+                
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 5;
+                ctx.shadowColor = 'rgba(0,0,0,0.1)';
+                ctx.shadowBlur = 4;
+                ctx.shadowOffsetY = 2;
+                ctx.stroke();
+                
+                // 그림자 리셋
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        function checkGameComplete() {
+            if (connectedLines.length === diseasesData.length) {
+                setTimeout(() => {
+                    playSound('win');
+                    showSuccessModal();
+                    createConfetti();
+                }, 500);
+            }
+        }
+
+        function showSuccessModal() {
+            const modal = document.getElementById('success-modal');
+            modal.classList.remove('hidden');
+            // 약간의 딜레이 후 opacity 변경으로 트랜지션 효과 적용
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                document.getElementById('modal-content').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function hideSuccessModal() {
+            const modal = document.getElementById('success-modal');
+            modal.classList.add('opacity-0');
+            document.getElementById('modal-content').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function resetGame() {
+            hideSuccessModal();
+            connectedLines = [];
+            currentDrawing = null;
+            isDrawing = false;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            renderUI();
+        }
+
+        // 축하 폭죽 효과 (단순화된 파티클)
+        function createConfetti() {
+            const colors = ['#f97316', '#ef4444', '#3b82f6', '#eab308', '#22c55e', '#a855f7'];
+            for (let i = 0; i < 100; i++) {
+                const confetti = document.createElement('div');
+                confetti.style.position = 'fixed';
+                confetti.style.width = '10px';
+                confetti.style.height = '10px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.top = '-10px';
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                confetti.style.zIndex = '9999';
+                confetti.style.pointerEvents = 'none';
+                document.body.appendChild(confetti);
+
+                const duration = Math.random() * 3 + 2;
+                const delay = Math.random() * 2;
+                const endY = window.innerHeight + 10;
+                
+                confetti.animate([
+                    { transform: `translate3d(0,0,0) rotate(0deg)`, opacity: 1 },
+                    { transform: `translate3d(${Math.random()*200 - 100}px, ${endY}px, 0) rotate(${Math.random()*720}deg)`, opacity: 0 }
+                ], {
+                    duration: duration * 1000,
+                    delay: delay * 1000,
+                    easing: 'cubic-bezier(.37,0,.63,1)',
+                    fill: 'forwards'
+                });
+
+                // 애니메이션 끝나면 DOM에서 제거
+                setTimeout(() => {
+                    confetti.remove();
+                }, (duration + delay) * 1000);
+            }
+        }
+
+        // 게임 시작 초기화
+        window.onload = () => {
+            renderUI();
+            
+            // 화면 스크롤이나 크기 변경 시 선 다시 그리기 (위치 보정)
+            document.getElementById('disease-list').addEventListener('scroll', drawAll);
+            window.addEventListener('scroll', drawAll);
+        };
+    </script>
+</body>
+</html>
