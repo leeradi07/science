@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>우리 몸 탐험대 - 우리 몸의 구조와 기능</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Outfit:wght@100..900&family=Noto+Sans+KR:wght@100..900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Outfit', 'Noto Sans KR', 'sans-serif'],
+            child: ['Fredoka', 'Noto Sans KR', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              200: '#ddd6fe',
+              300: '#c4b5fd',
+              400: '#a78bfa',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+              800: '#5b21b6',
+              900: '#4c1d95',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Marked Markdown Parser CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Markdown Styling in Chat Bubble */
+    .markdown-content p {
+      margin-bottom: 0.5rem;
+      line-height: 1.6;
+    }
+    .markdown-content p:last-child {
+      margin-bottom: 0;
+    }
+    .markdown-content strong {
+      font-weight: 700;
+      color: #312e81; /* Indigo 900 */
+      background: #eef2ff;
+      padding: 0.1rem 0.3rem;
+      border-radius: 0.25rem;
+    }
+    .markdown-content ul, .markdown-content ol {
+      margin-left: 1.25rem;
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
+      list-style-type: disc;
+    }
+    .markdown-content li {
+      margin-bottom: 0.25rem;
+    }
+    
+    /* Background grid effect */
+    .bg-grid {
+      background-size: 20px 20px;
+      background-image: linear-gradient(to right, #f1f5f9 1px, transparent 1px),
+                        linear-gradient(to bottom, #f1f5f9 1px, transparent 1px);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased h-screen overflow-hidden font-sans">
+
+  <!-- Error Boundary element (hidden by default) -->
+  <div id="error-boundary" class="hidden fixed inset-0 bg-red-50 text-red-900 p-6 z-50 overflow-auto font-mono">
+    <h1 class="text-2xl font-bold mb-4">🚨 시스템 로드 오류</h1>
+    <p id="error-message" class="white-space-pre-wrap"></p>
+  </div>
+
+  <div class="flex h-screen bg-slate-100 relative">
+    
+    <!-- 왼쪽 패널: 챗봇 영역 -->
+    <div id="chat-panel" class="flex-1 flex flex-col max-w-4xl border-r border-slate-200 bg-white shadow-2xl z-10 w-full h-full">
+      
+      <!-- 챗봇 헤더 -->
+      <header class="px-6 py-4 border-b border-slate-200 bg-white flex items-center justify-between sticky top-0 z-20 shadow-sm gap-2">
+        <div class="flex items-center gap-3 shrink-0">
+          <div class="w-10 h-10 bg-brand-100 text-brand-600 rounded-2xl flex items-center justify-center shadow-md animate-pulse">
+            <!-- Bot Icon SVG -->
+            <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="10" rx="2" ry="2"></rect>
+              <path d="M12 2v4M8 5h8"></path>
+              <circle cx="8" cy="14" r="1" fill="currentColor"></circle>
+              <circle cx="16" cy="14" r="1" fill="currentColor"></circle>
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-lg font-bold text-slate-800 font-child tracking-wide leading-tight">우리 몸 탐험대 🧬</h1>
+            <p class="text-[10px] text-slate-500 font-bold whitespace-nowrap leading-none mt-0.5">우리 몸의 구조와 기능 (5학년 1학기)</p>
+          </div>
+        </div>
+
+        <!-- 가로형 Stepper (대화 상태) - 헤더 중심으로 이동 -->
+        <div id="stepper" class="hidden md:flex items-center justify-between relative px-2 w-[340px] mx-4 shrink z-10 select-none">
+          <!-- Background connecting line -->
+          <div class="absolute top-[18px] left-6 right-6 h-1 bg-slate-200 -z-10">
+            <div id="stepper-progress-line" class="h-full bg-gradient-to-r from-brand-500 to-indigo-500 transition-all duration-500" style="width: 0%;"></div>
+          </div>
+
+          <!-- Step 0 -->
+          <div id="step-0" class="relative flex flex-col items-center flex-1">
+            <div class="step-circle flex items-center justify-center w-8 h-8 rounded-xl border-2 bg-white border-slate-200 text-slate-400 shadow-sm transition-all duration-300 text-xs font-bold">1</div>
+            <span class="step-title text-[9px] font-bold text-slate-500 mt-1 whitespace-nowrap">개념 도입</span>
+          </div>
+
+          <!-- Step 1 -->
+          <div id="step-1" class="relative flex flex-col items-center flex-1">
+            <div class="step-circle flex items-center justify-center w-8 h-8 rounded-xl border-2 bg-white border-slate-200 text-slate-400 shadow-sm transition-all duration-300 text-xs font-bold">2</div>
+            <span class="step-title text-[9px] font-bold text-slate-500 mt-1 whitespace-nowrap">생각 사슬</span>
+          </div>
+
+          <!-- Step 2 -->
+          <div id="step-2" class="relative flex flex-col items-center flex-1">
+            <div class="step-circle flex items-center justify-center w-8 h-8 rounded-xl border-2 bg-white border-slate-200 text-slate-400 shadow-sm transition-all duration-300 text-xs font-bold">3</div>
+            <span class="step-title text-[9px] font-bold text-slate-500 mt-1 whitespace-nowrap">성취 평가</span>
+          </div>
+
+          <!-- Step 3 -->
+          <div id="step-3" class="relative flex flex-col items-center flex-1">
+            <div class="step-circle flex items-center justify-center w-8 h-8 rounded-xl border-2 bg-white border-slate-200 text-slate-400 shadow-sm transition-all duration-300 text-xs font-bold">4</div>
+            <span class="step-title text-[9px] font-bold text-slate-500 mt-1 whitespace-nowrap">콘텐츠 개발</span>
+          </div>
+        </div>
+        
+        <div class="flex items-center gap-2 shrink-0">
+          <div class="px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full flex items-center gap-1.5 border border-emerald-200 hidden sm:flex">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            탐구 진행 중
+          </div>
+
+          <!-- Reset Button -->
+          <button id="btn-reset" title="새 대화 시작하기" class="p-2 hover:bg-slate-100 text-slate-500 hover:text-rose-500 rounded-xl transition-all">
+            <svg class="w-[18px] h-[18px]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+          </button>
+
+          <!-- Settings Button (Hidden to prevent student access) -->
+          <button id="btn-settings" title="Gemini 설정" class="hidden p-2 hover:bg-slate-100 text-slate-500 hover:text-brand-600 rounded-xl transition-all">
+            <svg class="w-[18px] h-[18px]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- 메시지 영역 -->
+      <div id="chat-messages" class="flex-1 overflow-y-auto p-6 space-y-6 bg-grid bg-slate-50/30">
+        <!-- 메시지 버블이 동적으로 주입됩니다 -->
+      </div>
+
+      <!-- 로딩 인디케이터 (hidden by default) -->
+      <div id="chat-loading" class="hidden px-6 pb-4 flex gap-4 flex-row items-start">
+        <div class="w-9 h-9 flex-shrink-0 rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-500 text-white flex items-center justify-center shadow-sm">
+          <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="10" rx="2" ry="2"></rect>
+            <path d="M12 2v4M8 5h8"></path>
+            <circle cx="8" cy="14" r="1" fill="currentColor"></circle>
+            <circle cx="16" cy="14" r="1" fill="currentColor"></circle>
+          </svg>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-2 shadow-sm rounded-tl-none">
+          <span class="w-2.5 h-2.5 bg-brand-400 rounded-full animate-bounce" style="animation-delay: 0ms;"></span>
+          <span class="w-2.5 h-2.5 bg-brand-400 rounded-full animate-bounce" style="animation-delay: 150ms;"></span>
+          <span class="w-2.5 h-2.5 bg-brand-400 rounded-full animate-bounce" style="animation-delay: 300ms;"></span>
+        </div>
+      </div>
+
+      <!-- 입력 영역 -->
+      <div class="p-4 bg-white border-t border-slate-200 shadow-md">
+        <form id="chat-form" class="relative flex items-center">
+          <input
+            id="chat-input"
+            type="text"
+            placeholder="AI 선생님께 대답을 입력해 보렴..."
+            class="w-full pl-5 pr-14 py-4 bg-slate-100 border-2 border-transparent rounded-2xl text-sm focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-200 transition-all outline-none"
+            autocomplete="off"
+          />
+          <button
+            type="submit"
+            id="btn-send"
+            class="absolute right-2 w-10 h-10 bg-gradient-to-tr from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white rounded-xl flex items-center justify-center transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg class="w-[18px] h-[18px] ml-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </form>
+        <div class="mt-2.5 text-center text-xs text-slate-400 font-medium">
+          💡 과학 질문에 힌트가 필요하면 "모르겠어요" 또는 "힌트 주세요"라고 말해봐!
+        </div>
+      </div>
+    </div>
+
+    <!-- 오른쪽 패널: 대시보드 및 콘텐츠 실행기 -->
+    <div id="right-panel" class="w-[420px] max-w-[65vw] hidden lg:flex flex-col bg-slate-50 border-l border-slate-200 h-full overflow-hidden transition-all duration-300 w-full">
+      <!-- 탭 헤더 -->
+      <div class="flex border-b border-slate-200 bg-white">
+        <button id="tab-dashboard" class="flex-1 py-4 text-center font-bold text-sm border-b-2 border-brand-600 text-brand-600 transition-all font-child tracking-wide">
+          🔬 학습 현황판
+        </button>
+        <button id="tab-sandbox" class="flex-1 py-4 text-center font-bold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all font-child tracking-wide flex items-center justify-center gap-1.5">
+          🎮 콘텐츠 실행기
+          <span id="sandbox-badge" class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse hidden"></span>
+        </button>
+      </div>
+
+      <!-- 뷰 컨테이너 (스크롤 관리) -->
+      <div class="flex-1 overflow-y-auto">
+        <!-- 뷰 A: 대시보드 -->
+        <div id="view-dashboard" class="p-6 space-y-6">
+          
+          <!-- 실시간 과학 돋보기 -->
+          <div id="science-lens" class="bg-white rounded-3xl border border-slate-200 shadow-sm p-4 flex flex-col">
+            <h3 class="text-sm font-bold text-slate-800 mb-2 flex items-center gap-2 font-child">
+              <svg class="w-4 h-4 text-brand-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              실시간 과학 돋보기
+            </h3>
+
+            <!-- 슬라이드 주제 선택 탭 -->
+            <div id="lens-tabs" class="flex flex-wrap gap-1 mb-3">
+              <button data-slide="default" class="lens-tab-btn text-[10px] px-2 py-0.5 rounded-full font-bold bg-brand-600 text-white shadow-sm transition-all select-none">🏠 홈</button>
+              <button data-slide="bone_muscle" class="lens-tab-btn text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all select-none">🦴 뼈/근육</button>
+              <button data-slide="digestive" class="lens-tab-btn text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all select-none">🍎 소화</button>
+              <button data-slide="circulatory" class="lens-tab-btn text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all select-none">❤️ 순환</button>
+              <button data-slide="respiratory" class="lens-tab-btn text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all select-none">👃 호흡</button>
+              <button data-slide="excretory" class="lens-tab-btn text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all select-none">🚽 배설</button>
+            </div>
+
+            <!-- 인터랙티브 그래픽 영역 -->
+            <div class="relative overflow-hidden bg-slate-50 rounded-2xl border border-slate-100">
+              <!-- 이전/다음 슬라이드 버튼 -->
+              <button id="btn-prev-slide" class="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 hover:bg-white border border-slate-200 text-slate-600 flex items-center justify-center shadow-sm transition-all z-10 font-bold select-none text-base">‹</button>
+              <button id="btn-next-slide" class="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 hover:bg-white border border-slate-200 text-slate-600 flex items-center justify-center shadow-sm transition-all z-10 font-bold select-none text-base">›</button>
+              
+              <div id="lens-graphic" class="h-64 flex items-center justify-center p-2">
+                <!-- JS에서 동적으로 드로잉 및 제어 -->
+              </div>
+            </div>
+
+            <!-- 슬라이드 인디케이터 도트 -->
+            <div id="lens-dots" class="flex justify-center gap-1.5 mt-2.5">
+              <span data-dot="default" class="w-3 h-1.5 rounded-full bg-brand-600 transition-all cursor-pointer"></span>
+              <span data-dot="bone_muscle" class="w-1.5 h-1.5 rounded-full bg-slate-300 transition-all cursor-pointer"></span>
+              <span data-dot="digestive" class="w-1.5 h-1.5 rounded-full bg-slate-300 transition-all cursor-pointer"></span>
+              <span data-dot="circulatory" class="w-1.5 h-1.5 rounded-full bg-slate-300 transition-all cursor-pointer"></span>
+              <span data-dot="respiratory" class="w-1.5 h-1.5 rounded-full bg-slate-300 transition-all cursor-pointer"></span>
+              <span data-dot="excretory" class="w-1.5 h-1.5 rounded-full bg-slate-300 transition-all cursor-pointer"></span>
+            </div>
+
+            <div id="lens-description" class="mt-3 text-xs text-slate-500 leading-relaxed font-medium bg-slate-50/50 p-3 rounded-xl border border-slate-100/50">
+              대화를 시작하면 대화의 과학 주제(뼈와 근육, 소화, 순환, 호흡, 배설 등)에 부합하는 그래픽이 여기에 표시됩니다.
+            </div>
+          </div>
+
+
+
+
+
+        </div>
+
+        <!-- 뷰 B: 콘텐츠 실행기 -->
+        <div id="view-sandbox" class="hidden p-6 h-full flex flex-col space-y-4">
+          <div id="sandbox-empty" class="flex-grow flex flex-col items-center justify-center text-center py-12 px-6 bg-white border border-slate-200 rounded-3xl shadow-sm border-dashed">
+            <svg class="w-14 h-14 text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" />
+            </svg>
+            <h3 class="text-sm font-bold text-slate-600 mb-1">콘텐츠 생성 준비 중</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              선생님과의 질문 대화를 모두 마치고 4단계(콘텐츠 개발)에서<br/>
+              <strong>"소화 여행 게임 코드를 짜줘"</strong> 또는<br/>
+              <strong>"뼈와 근육 작동 시뮬레이션 만들어줘"</strong><br/>
+              라고 채팅으로 요청해 보렴! 작동하는 웹 앱이 나타날 거야.
+            </p>
+          </div>
+          
+          <div id="sandbox-player" class="hidden flex-grow flex flex-col bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-md">
+            <div class="bg-slate-100 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between text-xs text-slate-600 font-bold">
+              <span class="flex items-center gap-1">🟢 실시간 플레이어 (HTML5 Sandbox)</span>
+              <button id="btn-reload-sandbox" class="px-2 py-0.5 bg-white border border-slate-200 hover:bg-slate-50 text-brand-600 rounded-md transition-colors shadow-sm">다시 실행 🔄</button>
+            </div>
+            <!-- Interactive Iframe -->
+            <iframe id="sandbox-iframe" sandbox="allow-scripts" class="w-full flex-grow bg-white border-none h-[calc(100vh-140px)]"></iframe>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 모바일 하단 내비게이션 바 -->
+    <div id="mobile-nav-bar" class="hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-t border-slate-200 z-30 flex items-center justify-around shadow-[0_-4px_10px_rgba(0,0,0,0.05)] lg:hidden">
+      <button id="nav-mobile-chat" onclick="setMobileView('chat')" class="flex flex-col items-center justify-center flex-1 h-full text-brand-600 font-bold transition-all relative bg-brand-50/40">
+        <span class="text-xl">💬</span>
+        <span class="text-[10px] mt-0.5">대화하기</span>
+      </button>
+      <button id="nav-mobile-lens" onclick="setMobileView('dashboard')" class="flex flex-col items-center justify-center flex-1 h-full text-slate-400 font-bold transition-all relative">
+        <span class="text-xl">🔬</span>
+        <span class="text-[10px] mt-0.5">과학 돋보기</span>
+      </button>
+      <button id="nav-mobile-sandbox" onclick="setMobileView('sandbox')" class="flex flex-col items-center justify-center flex-1 h-full text-slate-400 font-bold transition-all relative">
+        <span class="text-xl">🎮</span>
+        <span class="text-[10px] mt-0.5">콘텐츠 실행기</span>
+        <span id="mobile-sandbox-badge" class="absolute top-2 right-[calc(50%-18px)] w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse hidden"></span>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Settings Modal (Gemini API Key & Model Configuration) -->
+  <div id="settings-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden transform transition-all scale-100">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-5 bg-gradient-to-tr from-brand-600 to-indigo-600 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5 animate-spin-slow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <h3 class="font-bold text-base font-child">Gemini 인공지능 선생님 설정</h3>
+        </div>
+        <button id="btn-close-settings" class="p-1.5 hover:bg-white/20 rounded-xl transition-colors">
+          <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <form id="settings-form" class="p-6 space-y-5">
+        <div class="bg-brand-50/70 p-4 rounded-2xl border border-brand-100 flex items-start gap-3">
+          <span class="text-brand-600 shrink-0 text-lg">💡</span>
+          <p class="text-xs text-brand-900 leading-relaxed font-medium">
+            BodyTech 탐험대 대화를 실행하려면 구글 <strong>Gemini API Key</strong>가 필요합니다. 구글 AI 스튜디오에서 발급받은 API 키를 입력해 주세요.
+          </p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Gemini API Key</label>
+          <input 
+            id="settings-api-key"
+            type="password"
+            placeholder="AIzaSy..."
+            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-200 transition-all outline-none font-mono"
+            required
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">인공지능 모델 선택</label>
+          <select 
+            id="settings-model"
+            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-200 transition-all outline-none font-medium"
+          >
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash (권장 - 빠르고 스마트함)</option>
+            <option value="gemini-2.5-pro">Gemini 2.5 Pro (깊이 있는 대화)</option>
+            <option value="gemini-1.5-flash">Gemini 1.5 Flash (이전 모델)</option>
+          </select>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="pt-2 flex gap-3">
+          <button 
+            type="button"
+            id="btn-cancel-settings"
+            class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-2xl transition-colors"
+          >
+            취소
+          </button>
+          <button 
+            type="submit"
+            class="flex-1 py-3 bg-gradient-to-tr from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white text-sm font-bold rounded-2xl transition-colors shadow-md shadow-brand-100"
+          >
+            저장 및 시작하기
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Vanilla Javascript Controller -->
+  <script>
+    // Global Error Logger for UI feedback
+    window.addEventListener('error', function(e) {
+      console.error("Global Error caught:", e);
+      const boundary = document.getElementById('error-boundary');
+      const msg = document.getElementById('error-message');
+      if (boundary && msg) {
+        boundary.classList.remove('hidden');
+        msg.textContent = e.message + '\n파일: ' + e.filename + '\n줄 번호: ' + e.lineno;
+      }
+    });
+
+    // Configuration
+    const SYSTEM_PROMPT = `
+[Role]
+당신은 초등학교 5학년 학생들에게 '우리 몸의 구조와 기능'을 가르치는 친절하고 전문적인 AI 과학 교사입니다. 학생의 눈높이에 맞는 쉬운 어휘를 사용하고, 항상 격려하는 태도를 유지하세요.
+
+[Objective]
+당신의 목표는 '생각의 사슬(Chain of Thought)' 기법을 활용한 대화를 통해 학생이 다음 세 가지 핵심 성취기준(원리, 상호관계, 실천)을 종합적으로 이해했는지 확인하는 것입니다. 교과서에 나오는 지협적인 지식(개별 기관의 미시적인 이름이나 세부 기능 암기 등)을 꼬치꼬치 묻기보다는, 큰 흐름에서 몸의 움직임과 각 계통의 연계성을 이해했는가에 초점을 두어야 합니다.
+
+[Achievement Standards (핵심 평가 대상)]
+1. [뼈와 근육의 움직임 원리] 뼈와 근육이 협동하여 어떻게 팔다리를 구부리고 펴서 몸을 움직이게 만드는지 그 원리를 이해하고 설명할 수 있는가?
+2. [기관들의 구조, 기능 및 상호 연계성] 소화, 순환, 호흡, 배설 기관이 각각 어떤 큰 일을 하며, 우리가 운동할 때 왜 이 기관들이 한꺼번에 바빠지는지(유기적 연결성)를 설명할 수 있는가?
+3. [건강한 생활 실천] 우리 몸의 여러 기관과 관련된 일상적인 질병(감기, 장염 등)을 예방하고 건강을 지키기 위해 실천할 수 있는 행동을 말할 수 있는가?
+
+[Reference Knowledge (교과 내용 - 보조 참고용)]
+※ 아래의 교과 내용은 평가의 절대적 기준이 아닙니다. 학생이 이 지식을 암기했는지 확인하는 용도가 아니라, 대화 중 막혔을 때 힌트를 주거나 풍부한 설명을 덧붙이는 보조 용도로만 사용하세요.
+- 뼈와 근육: 팔을 구부릴 때 안쪽 근육은 수축(줄어듦)하고 바깥쪽 근육은 이완(늘어남).
+- 소화기관: 입, 식도, 위, 작은창자, 큰창자, 항문 (간, 쓸개, 이자는 소화를 돕는 조력자).
+- 순환기관: 심장(엔진), 혈관(고속도로). 혈액을 순환시킴.
+- 호흡기관: 코, 숨관, 폐. 산소를 흡수하고 이산화탄소를 배출.
+- 배설기관: 콩팥, 방광. 혈액 속 노폐물을 걸러 오줌을 만듦.
+- 유기적 연결: 운동할 때 숨이 차고 심장이 빨리 뛰는 것은 근육에 산소와 영양분을 빠르게 배달하기 위해 호흡기관과 순환기관이 함께 일하기 때문.
+
+[Interaction Guidelines (대화 규칙)]
+1. 핵심 원리 위주의 질문: "심장의 기능이 뭐니?"와 같은 단편적인 지식 확인형 질문을 지양하세요. 대신 "우리가 달리기를 할 때 왜 숨도 가빠지고 심장도 쿵쾅쿵쾅 빠르게 뛸까?"처럼 여러 기관의 연계성을 물어보는 종합적인 질문을 던지세요.
+2. 한 번에 하나만 질문하기: 절대 한 번에 여러 질문을 하거나 정답을 먼저 스포일러하지 마세요.
+3. 생각의 사슬(CoT) 문답: 학생의 답변이 짧더라도, 무시하거나 타박하지 말고 "맞아! 그럼 그렇게 피가 온몸을 돌 때 산소는 어디서 얻어올까?" 하는 식으로 징검다리를 놓듯 이해를 연결해 주세요.
+4. 보조적 지식은 힌트로 제공: 학생이 소화 과정의 세부 기관 순서를 헷갈려하더라도 문제 삼지 마세요. "위 다음에는 영양분을 흡수하는 아주 긴 창자가 있어, 이름이 뭐였더라?"와 같이 힌트로 제공하여 주도권을 학생에게 주며 원리를 스스로 깨닫도록 유도하세요.
+5. 유연한 달성도 평가: 학생이 완벽한 전공 지식이나 교과서 단어를 말하지 않더라도, "근육이 잡아당겨줘서 뼈가 움직인다", "심장이 피를 보내서 온몸을 돌게 한다", "운동하면 에너지와 공기가 많이 필요해서 심장이랑 폐가 바빠진다" 수준의 핵심 원리를 흐름상 설명하면 성취기준을 통과한 것으로 간주하세요.
+6. 콘텐츠 개발 보상 및 제작 지침:
+   - 학생이 원리를 설명하고 4단계(콘텐츠 개발)에 도달하면, 칭찬과 함께 직접 [미니 퀴즈 앱 / 신체 시뮬레이션 / 간단한 미니 게임] 중 하나를 기획하도록 안내하세요.
+   - 학생이 기획을 이야기하고 제작을 요청하면, **실제 웹 브라우저에서 독립적으로 동작하고 플레이 가능한 완성된 HTML/JS/CSS 코드를 \` \`\`html \` 코드 블록으로 반드시 작성해서 답변에 포함**해 주세요.
+   - 코드 내부에는 미려한 디자인(Tailwind CSS CDN 활용 등)과 버튼을 누르면 점수가 계산되거나 반응을 하는 상호작용 자바스크립트 코드가 충실히 들어있어야 합니다.
+`;
+
+    const INITIAL_MESSAGE = "안녕! 나는 너의 과학 탐구를 도와줄 AI 교사야. 오늘은 우리 몸이 어떻게 움직이고, 숨을 쉬고, 영양분을 얻는지 알아볼 거야. 먼저, 우리가 팔을 구부리거나 펼 때 피부 속에서는 어떤 일이 일어나고 있을까?";
+
+    // App State variables
+    let messages = [{ role: 'model', text: INITIAL_MESSAGE }];
+    let activeState = 0; // 0: Diagnosis, 1: CoT Q&A, 2: Evaluation, 3: Content Creation
+    let isLoading = false;
+    let apiKey = localStorage.getItem('bodytech_api_key') || '';
+    let selectedModel = 'gemini-2.5-flash'; // Enforce Gemini 2.5 Flash as default for key pool
+    let currentTopic = '';
+    let currentInterval = null;
+
+    // Slide control for Science Lens
+    const slideTopics = ['default', 'bone_muscle', 'digestive', 'circulatory', 'respiratory', 'excretory'];
+    let currentSlideIdx = 0;
+
+    // Mobile view state and handlers
+    let activeMobileView = 'chat'; // 'chat', 'dashboard', 'sandbox'
+
+    function setMobileView(view) {
+      activeMobileView = view;
+      handleResize();
+    }
+
+    function updateMobileNavUI() {
+      const btnChat = document.getElementById('nav-mobile-chat');
+      const btnLens = document.getElementById('nav-mobile-lens');
+      const btnSandbox = document.getElementById('nav-mobile-sandbox');
+      
+      if (!btnChat || !btnLens || !btnSandbox) return;
+      
+      [btnChat, btnLens, btnSandbox].forEach(btn => {
+        btn.className = "flex flex-col items-center justify-center flex-1 h-full text-slate-400 font-bold transition-all relative";
+      });
+      
+      if (activeMobileView === 'chat') {
+        btnChat.className = "flex flex-col items-center justify-center flex-1 h-full text-brand-600 font-bold transition-all relative bg-brand-50/40";
+      } else if (activeMobileView === 'dashboard') {
+        btnLens.className = "flex flex-col items-center justify-center flex-1 h-full text-brand-600 font-bold transition-all relative bg-brand-50/40";
+      } else if (activeMobileView === 'sandbox') {
+        btnSandbox.className = "flex flex-col items-center justify-center flex-1 h-full text-brand-600 font-bold transition-all relative bg-brand-50/40";
+      }
+    }
+
+    function handleResize() {
+      const isMobile = window.innerWidth < 1024;
+      const chatPanel = document.getElementById('chat-panel');
+      const rightPanel = document.getElementById('right-panel');
+      const mobileNav = document.getElementById('mobile-nav-bar');
+      const viewDashboard = document.getElementById('view-dashboard');
+      const viewSandbox = document.getElementById('view-sandbox');
+      const tabDashboard = document.getElementById('tab-dashboard');
+      const tabSandbox = document.getElementById('tab-sandbox');
+      
+      if (!chatPanel || !rightPanel) return;
+
+      if (isMobile) {
+        if (mobileNav) mobileNav.classList.remove('hidden');
+        
+        chatPanel.classList.add('pb-16');
+        rightPanel.classList.add('pb-16');
+        
+        rightPanel.classList.remove('w-[420px]', 'w-[850px]', 'max-w-[65vw]');
+        rightPanel.classList.add('w-full', 'max-w-none');
+        
+        if (activeMobileView === 'chat') {
+          chatPanel.classList.remove('hidden');
+          chatPanel.classList.add('flex', 'w-full');
+          rightPanel.classList.add('hidden');
+          rightPanel.classList.remove('flex');
+        } else {
+          chatPanel.classList.add('hidden');
+          chatPanel.classList.remove('flex', 'w-full');
+          rightPanel.classList.remove('hidden');
+          rightPanel.classList.add('flex', 'w-full');
+          
+          if (activeMobileView === 'dashboard') {
+            viewDashboard.classList.remove('hidden');
+            viewSandbox.classList.add('hidden');
+            if (tabDashboard && tabSandbox) {
+              tabDashboard.classList.add('border-brand-600', 'text-brand-600');
+              tabDashboard.classList.remove('border-transparent', 'text-slate-500');
+              tabSandbox.classList.add('border-transparent', 'text-slate-500');
+              tabSandbox.classList.remove('border-brand-600', 'text-brand-600');
+            }
+          } else if (activeMobileView === 'sandbox') {
+            viewSandbox.classList.remove('hidden');
+            viewDashboard.classList.add('hidden');
+            if (tabDashboard && tabSandbox) {
+              tabSandbox.classList.add('border-brand-600', 'text-brand-600');
+              tabSandbox.classList.remove('border-transparent', 'text-slate-500');
+              tabDashboard.classList.add('border-transparent', 'text-slate-500');
+              tabDashboard.classList.remove('border-brand-600', 'text-brand-600');
+            }
+          }
+        }
+        
+        updateMobileNavUI();
+      } else {
+        if (mobileNav) mobileNav.classList.add('hidden');
+        
+        chatPanel.classList.remove('pb-16', 'hidden');
+        chatPanel.classList.add('flex');
+        
+        rightPanel.classList.remove('pb-16', 'hidden', 'w-full', 'max-w-none');
+        rightPanel.classList.add('flex');
+        
+        const isSandboxActive = tabSandbox && !tabSandbox.classList.contains('border-transparent');
+        if (isSandboxActive) {
+          rightPanel.classList.remove('w-[420px]');
+          rightPanel.classList.add('w-[850px]');
+          if (viewSandbox) viewSandbox.classList.remove('hidden');
+          if (viewDashboard) viewDashboard.classList.add('hidden');
+        } else {
+          rightPanel.classList.remove('w-[850px]');
+          rightPanel.classList.add('w-[420px]');
+          if (viewDashboard) viewDashboard.classList.remove('hidden');
+          if (viewSandbox) viewSandbox.classList.add('hidden');
+        }
+        rightPanel.classList.add('max-w-[65vw]');
+      }
+    }
+
+    // API Key Pooling / Rotation (교사용 자동 로테이션 키 풀)
+    // 등록된 2개의 서로 다른 구글 계정 무료 API 키가 순환하며 동작합니다.
+    const API_KEY_POOL = [
+      "AQ.Ab8RN6KGBIe6gAR3BraH_-DAtCf_rpamkBMnibjSgR_ehT3sUA",
+      "AIzaSyDa7Km76mkYcWVucfmXuqvyUMRYIjaVLjQ"
+    ];
+    let currentKeyIdx = parseInt(localStorage.getItem('bodytech_current_key_idx') || '0', 10);
+
+    // DOM Elements
+    const chatMessages = document.getElementById('chat-messages');
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const btnSend = document.getElementById('btn-send');
+    const btnReset = document.getElementById('btn-reset');
+    const btnSettings = document.getElementById('btn-settings');
+    const chatLoading = document.getElementById('chat-loading');
+    
+
+
+    // Settings Modal Elements
+    const settingsModal = document.getElementById('settings-modal');
+    const settingsForm = document.getElementById('settings-form');
+    const settingsApiKey = document.getElementById('settings-api-key');
+    const settingsModel = document.getElementById('settings-model');
+    const btnCloseSettings = document.getElementById('btn-close-settings');
+    const btnCancelSettings = document.getElementById('btn-cancel-settings');
+
+    // Tab Elements
+    const tabDashboard = document.getElementById('tab-dashboard');
+    const tabSandbox = document.getElementById('tab-sandbox');
+    const viewDashboard = document.getElementById('view-dashboard');
+    const viewSandbox = document.getElementById('view-sandbox');
+    const rightPanel = document.getElementById('right-panel');
+    const chatPanel = document.getElementById('chat-panel');
+    const sandboxBadge = document.getElementById('sandbox-badge');
+    const mobileSandboxBadge = document.getElementById('mobile-sandbox-badge');
+    const sandboxEmpty = document.getElementById('sandbox-empty');
+    const sandboxPlayer = document.getElementById('sandbox-player');
+    const sandboxIframe = document.getElementById('sandbox-iframe');
+    const btnReloadSandbox = document.getElementById('btn-reload-sandbox');
+
+    // SVG 과학 돋보기 템플릿 정의
+    const templates = {
+      default: {
+        graphic: `
+          <div class="flex flex-col items-center justify-center text-center p-4">
+            <div class="w-14 h-14 bg-gradient-to-tr from-brand-100 to-indigo-100 text-brand-600 rounded-2xl flex items-center justify-center shadow-md animate-bounce mb-2">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <rect x="3" y="11" width="18" height="10" rx="2" ry="2"></rect>
+                <path d="M12 2v4M8 5h8"></path>
+                <circle cx="8" cy="14" r="1.5" fill="currentColor"></circle>
+                <circle cx="16" cy="14" r="1.5" fill="currentColor"></circle>
+              </svg>
+            </div>
+            <span class="text-xs text-brand-600 font-bold font-child animate-pulse">우리 몸의 신비! 공부할 준비가 되었니?</span>
+          </div>
+        `,
+        description: "AI 과학 선생님과 대화를 시작해 보세요. **뼈와 근육, 소화, 순환, 호흡, 배설** 등 몸에 관해 이야기하면, 해당 부위의 움직이는 인터랙티브 과학 그래픽이 여기에 표시됩니다."
+      },
+      bone_muscle: {
+        graphic: `
+          <div class="flex flex-col items-center w-full px-4">
+            <svg class="w-full h-52" viewBox="0 0 240 160">
+              <!-- Upper Arm Bone -->
+              <line x1="120" y1="35" x2="120" y2="105" stroke="#cbd5e1" stroke-width="12" stroke-linecap="round" />
+              <!-- Joint -->
+              <circle cx="120" cy="105" r="9" fill="#94a3b8" />
+              <!-- Lower Arm Bone -->
+              <line id="bone-lower" x1="120" y1="105" x2="190" y2="105" stroke="#cbd5e1" stroke-width="10" stroke-linecap="round" />
+              <!-- Tricep (Back Muscle) -->
+              <path id="muscle-tricep" d="M 110,50 Q 98,80 110,110" stroke="#fca5a5" stroke-width="16" fill="none" stroke-linecap="round" />
+              <!-- Bicep (Front Muscle) -->
+              <path id="muscle-bicep" d="M 120,50 Q 135,80 155,105" stroke="#ef4444" stroke-width="8" fill="none" stroke-linecap="round" />
+            </svg>
+            <div class="w-full flex items-center gap-2 mt-1">
+              <span class="text-[10px] text-slate-400 font-bold">이완(폄)</span>
+              <input type="range" id="muscle-range" min="0" max="100" value="0" class="flex-1 accent-brand-600 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+              <span class="text-[10px] text-brand-600 font-bold">수축(구부림)</span>
+            </div>
+          </div>
+        `,
+        description: "💪 <strong>뼈와 근육의 작동 원리</strong>: 우리 몸은 뼈 혼자 움직일 수 없습니다. 근육은 뼈에 붙어 당겨주는 일을 합니다. 팔을 구부릴 때 <strong>안쪽 근육(이두근)은 수축(두꺼워지고 짧아짐)</strong>하고, <strong>바깥쪽 근육(삼두근)은 이완(얇아지고 늘어남)</strong>합니다."
+      },
+      digestive: {
+        graphic: `
+          <div class="flex flex-col items-center w-full px-4">
+            <svg class="w-full h-52" viewBox="0 0 240 160">
+              <!-- Esophagus -->
+              <line id="org-esophagus" x1="120" y1="20" x2="120" y2="55" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round" />
+              <!-- Stomach -->
+              <path id="org-stomach" d="M 120,55 Q 100,62 120,80" stroke="#cbd5e1" stroke-width="10" fill="none" stroke-linecap="round" />
+              <!-- Small Intestine -->
+              <path id="org-small-int" d="M 120,80 Q 112,88 120,96 T 120,105" stroke="#cbd5e1" stroke-width="7" fill="none" stroke-linecap="round" />
+              <!-- Large Intestine -->
+              <path id="org-large-int" d="M 108,80 H 132 V 110 H 120" stroke="#cbd5e1" stroke-width="9" fill="none" stroke-linecap="round" />
+              <!-- Food Particle -->
+              <circle id="food-particle" cx="120" cy="15" r="4.5" fill="#f59e0b" />
+            </svg>
+            <button id="btn-start-digestion" class="px-3 py-1 bg-brand-600 hover:bg-brand-700 text-white text-[10px] font-bold rounded-lg shadow-md transition-colors mt-0.5">
+              음식물 소화 여행 시작 🍎
+            </button>
+          </div>
+        `,
+        description: "🍎 <strong>소화기관의 역할</strong>: 음식물은 입 ➡️ 식도 ➡️ 위 ➡️ 작은창자 ➡️ 큰창자 ➡️ 항문 순으로 이동합니다. 입에서는 잘게 부수고, 위에서는 단백질을 녹이고, 작은창자에서 영양소를, 큰창자에서 물을 흡수합니다."
+      },
+      circulatory: {
+        graphic: `
+          <div class="flex flex-col items-center w-full px-4">
+            <style>
+              @keyframes heartbeat {
+                0% { transform: scale(1); }
+                30% { transform: scale(1.15); }
+                40% { transform: scale(1); }
+                70% { transform: scale(1.08); }
+                100% { transform: scale(1); }
+              }
+              .pulse-animation {
+                transform-origin: 120px 65px;
+                animation: heartbeat 1.2s infinite;
+              }
+              @keyframes flow {
+                to { stroke-dashoffset: -100; }
+              }
+              .flow-line {
+                stroke-dasharray: 6 12;
+                animation: flow 4s linear infinite;
+              }
+            </style>
+            <svg class="w-full h-52" viewBox="0 0 240 160">
+              <path d="M 120,8 C 95,8 85,35 85,65 C 85,95 100,125 120,125 C 140,125 155,95 155,65 C 155,35 145,8 120,8 Z" fill="none" stroke="#f1f5f9" stroke-width="4" />
+              <!-- Lung circuit (Top) -->
+              <path id="path-lungs" d="M 120,55 C 95,38 95,20 120,20 C 145,20 145,38 120,55" fill="none" stroke="#93c5fd" stroke-width="4.5" class="flow-line" />
+              <!-- Body circuit (Bottom) -->
+              <path id="path-body" d="M 120,75 C 75,90 75,115 120,115 C 165,115 165,90 120,75" fill="none" stroke="#fca5a5" stroke-width="4.5" class="flow-line" />
+              <!-- Heart (Center) -->
+              <g id="heart-g" class="pulse-animation">
+                <path d="M 120,70 C 116,62 108,62 108,70 C 108,78 120,86 120,86 C 120,86 132,78 132,70 C 132,62 124,62 120,70 Z" fill="#ef4444" stroke="#ffffff" stroke-width="1.5" />
+              </g>
+            </svg>
+            <div class="w-full flex items-center justify-between mt-1">
+              <span class="text-[9px] text-slate-500 font-bold">심장박동: <span id="pulse-rate">보통 (70회/분)</span></span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="circulatory-exercise" class="sr-only peer">
+                <div class="w-8 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-brand-600"></div>
+                <span class="ml-1.5 text-[10px] font-bold text-slate-700">🏃 운동 시작!</span>
+              </label>
+            </div>
+          </div>
+        `,
+        description: "❤️ <strong>순환기관의 역할</strong>: 심장은 끊임없이 펌프질을 해 혈관을 통해 온몸으로 피를 순환시킵니다. 혈액은 산소와 영양소를 배달하고 이산화탄소와 노폐물을 수거해 옵니다. **운동을 하면 근육이 일을 하느라 많은 에너지가 필요하므로 심장 박동과 순환 속도가 급격히 빨라집니다.**"
+      },
+      respiratory: {
+        graphic: `
+          <div class="flex flex-col items-center w-full px-4">
+            <style>
+              @keyframes breathing {
+                0% { transform: scale(0.92); }
+                50% { transform: scale(1.05); }
+                100% { transform: scale(0.92); }
+              }
+              .lung-animation {
+                transform-origin: 120px 65px;
+                animation: breathing 4s ease-in-out infinite;
+              }
+            </style>
+            <svg class="w-full h-52" viewBox="0 0 240 160">
+              <!-- Trachea (숨관) -->
+              <path d="M 120,10 L 120,45 L 108,58 M 120,45 L 132,58" fill="none" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round" />
+              <!-- Lungs -->
+              <g id="lungs-g" class="lung-animation">
+                <!-- Left Lung -->
+                <path d="M 116,50 C 85,55 85,95 102,105 C 111,108 116,100 116,88 Z" fill="#fca5a5" stroke="#ef4444" stroke-width="1.5" />
+                <!-- Right Lung -->
+                <path d="M 124,50 C 155,55 155,95 138,105 C 129,108 124,100 124,88 Z" fill="#fca5a5" stroke="#ef4444" stroke-width="1.5" />
+              </g>
+            </svg>
+            <div class="w-full flex items-center justify-between mt-1">
+              <span class="text-[9px] text-slate-500 font-bold">호흡수: <span id="breath-rate">보통 (15회/분)</span></span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="respiratory-exercise" class="sr-only peer">
+                <div class="w-8 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-brand-600"></div>
+                <span class="ml-1.5 text-[10px] font-bold text-slate-700">🏃 운동 시작!</span>
+              </label>
+            </div>
+          </div>
+        `,
+        description: "👃 <strong>호흡기관의 역할</strong>: 코, 숨관, 숨관가지, 폐(허파)로 이루어져 있으며, 몸에 필요한 산소를 들이마시고 이산화탄소를 내보내는 가스 교환을 담당합니다. 운동 시 더 많은 산소가 필요하므로 호흡 속도(폐의 팽창/수축 주기)가 매우 가빠집니다."
+      },
+      excretory: {
+        graphic: `
+          <div class="flex flex-col items-center w-full px-4">
+            <svg class="w-full h-52" viewBox="0 0 240 160">
+              <!-- Kidneys -->
+              <path d="M 92,40 C 83,45 83,58 92,62 C 95,62 96,56 96,51 C 96,46 95,40 92,40 Z" fill="#991b1b" stroke="#7f1d1d" stroke-width="1" />
+              <path d="M 148,40 C 157,45 157,58 148,62 C 145,62 144,56 144,51 C 144,46 145,40 148,40 Z" fill="#991b1b" stroke="#7f1d1d" stroke-width="1" />
+              <!-- Bladder -->
+              <circle cx="120" cy="110" r="14" fill="none" stroke="#94a3b8" stroke-width="2" />
+              <circle id="bladder-fill" cx="120" cy="110" r="13" fill="#fef08a" style="clip-path: inset(100% 0% 0% 0%); transition: clip-path 0.5s;" />
+              <!-- Ureters -->
+              <path d="M 96,51 C 105,68 110,88 113,97" fill="none" stroke="#cbd5e1" stroke-width="2.5" stroke-linecap="round" />
+              <path d="M 144,51 C 135,68 130,88 127,97" fill="none" stroke="#cbd5e1" stroke-width="2.5" stroke-linecap="round" />
+              <!-- Droplets -->
+              <circle id="drop-left" cx="96" cy="51" r="2" fill="#eab308" />
+              <circle id="drop-right" cx="144" cy="51" r="2" fill="#eab308" />
+            </svg>
+            <div class="w-full flex items-center justify-between mt-1">
+              <span class="text-[9px] text-slate-500 font-bold">방광 오줌 축적량: <span id="urine-level">0%</span></span>
+              <button id="btn-pee" class="px-2.5 py-0.5 bg-amber-500 hover:bg-amber-600 text-white text-[9px] font-bold rounded-md shadow transition-colors">
+                오줌 누기 🚽
+              </button>
+            </div>
+          </div>
+        `,
+        description: "콩팥(신장)은 혈액 속의 노폐물을 걸러 오줌을 만듭니다. 오줌은 오줌관을 타고 방광에 모여 있다가 오줌 누기 요의를 느끼면 요도를 통해 몸 밖으로 나갑니다. 몸의 정수기 역할을 담당합니다."
+      }
+    };
+
+    // Topic detection from dialogue text
+    function detectTopicFromHistory() {
+      if (messages.length <= 1) return 'default';
+      const recentText = messages.slice(-3).map(m => m.text).join(' ');
+      
+      if (/뼈|근육|팔|구부|관절|움직|수축|이완/.test(recentText)) return 'bone_muscle';
+      if (/소화|위|식도|입|창자|소장|대장|항문|영양분|대변|똥/.test(recentText)) return 'digestive';
+      if (/순환|심장|혈관|피|혈액|맥박|박동|배달/.test(recentText)) return 'circulatory';
+      if (/호흡|코|숨|폐|허파|산소|이산화탄소|가스/.test(recentText)) return 'respiratory';
+      if (/배설|콩팥|방광|오줌|뇨|노폐물|필터/.test(recentText)) return 'excretory';
+      
+      return 'default';
+    }
+
+    // Set topic visualizer
+    function setTopic(newTopic) {
+      if (currentTopic === newTopic) return;
+      currentTopic = newTopic;
+      
+      // Clear timers
+      if (currentInterval) {
+        clearInterval(currentInterval);
+        currentInterval = null;
+      }
+      
+      const lensGraphic = document.getElementById('lens-graphic');
+      const lensDesc = document.getElementById('lens-description');
+      
+      if (lensGraphic && lensDesc) {
+        lensGraphic.innerHTML = templates[newTopic].graphic;
+        lensDesc.innerHTML = templates[newTopic].description;
+        
+        initTopicListeners(newTopic);
+      }
+
+      // Sync slide index
+      const newIdx = slideTopics.indexOf(newTopic);
+      if (newIdx !== -1) {
+        currentSlideIdx = newIdx;
+        updateLensUI(newTopic);
+      }
+    }
+
+    // Manual slide navigation
+    function goToSlide(index) {
+      if (index < 0) index = slideTopics.length - 1;
+      if (index >= slideTopics.length) index = 0;
+      
+      const nextTopic = slideTopics[index];
+      // Temporarily clear currentTopic to force trigger setTopic
+      currentTopic = '';
+      setTopic(nextTopic);
+    }
+
+    // Update active visual styles of tabs and dots
+    function updateLensUI(activeTopic) {
+      // Update tabs active state
+      const tabBtns = document.querySelectorAll('.lens-tab-btn');
+      tabBtns.forEach(btn => {
+        const slideVal = btn.getAttribute('data-slide');
+        if (slideVal === activeTopic) {
+          btn.className = "lens-tab-btn text-[10px] px-2.5 py-1 rounded-full font-bold bg-brand-600 text-white shadow-sm transition-all select-none";
+        } else {
+          btn.className = "lens-tab-btn text-[10px] px-2.5 py-1 rounded-full font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all select-none";
+        }
+      });
+      
+      // Update dots active state
+      const dots = document.querySelectorAll('#lens-dots span');
+      dots.forEach(dot => {
+        const dotVal = dot.getAttribute('data-dot');
+        if (dotVal === activeTopic) {
+          dot.className = "w-3 h-1.5 rounded-full bg-brand-600 transition-all cursor-pointer";
+        } else {
+          dot.className = "w-1.5 h-1.5 rounded-full bg-slate-300 transition-all cursor-pointer";
+        }
+      });
+    }
+
+    // Initialize SVG interactive listeners
+    function initTopicListeners(topic) {
+      if (topic === 'bone_muscle') {
+        const range = document.getElementById('muscle-range');
+        const bicep = document.getElementById('muscle-bicep');
+        const tricep = document.getElementById('muscle-tricep');
+        const bone = document.getElementById('bone-lower');
+        
+        if (range && bicep && tricep && bone) {
+          range.addEventListener('input', function(e) {
+            const v = parseFloat(e.target.value);
+            const pct = v / 100;
+            const x2 = 190 - pct * 45;
+            const y2 = 105 - pct * 55;
+            bone.setAttribute('x2', x2);
+            bone.setAttribute('y2', y2);
+            
+            const bicepAttachX = 155 - pct * 30;
+            const bicepAttachY = 105 - pct * 35;
+            const bicepCtrlX = 135 + pct * 20;
+            bicep.setAttribute('d', `M 120,50 Q ${bicepCtrlX},80 ${bicepAttachX},${bicepAttachY}`);
+            bicep.setAttribute('stroke-width', 8 + pct * 14);
+            
+            const tricepCtrlX = 98 - (1 - pct) * 10;
+            tricep.setAttribute('d', `M 110,50 Q ${tricepCtrlX},80 110,110`);
+            tricep.setAttribute('stroke-width', 16 - pct * 9);
+          });
+        }
+      } else if (topic === 'digestive') {
+        const btn = document.getElementById('btn-start-digestion');
+        const food = document.getElementById('food-particle');
+        const orgEsophagus = document.getElementById('org-esophagus');
+        const orgStomach = document.getElementById('org-stomach');
+        const orgSmallInt = document.getElementById('org-small-int');
+        const orgLargeInt = document.getElementById('org-large-int');
+        
+        if (btn && food) {
+          btn.addEventListener('click', function() {
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+            
+            const path = [
+              { x: 120, y: 15, text: "입: 이로 음식물을 씹어서 침과 함께 삼킵니다." },
+              { x: 120, y: 35, text: "식도: 가늘고 긴 관을 통해 음식물을 위로 운반합니다.", highlight: orgEsophagus },
+              { x: 110, y: 65, text: "위: 주머니 같은 위에서 강한 위액으로 음식물을 죽처럼 녹입니다.", highlight: orgStomach },
+              { x: 116, y: 88, text: "작은창자: 꼬불꼬불한 긴 관에서 음식물의 영양분을 거의 다 흡수합니다.", highlight: orgSmallInt },
+              { x: 132, y: 95, text: "큰창자: 영양분이 빠진 찌꺼기에서 수분을 마저 흡수합니다.", highlight: orgLargeInt },
+              { x: 120, y: 120, text: "항문: 남은 찌꺼기를 대변(똥)으로 배출합니다." }
+            ];
+            
+            let idx = 0;
+            function runStep() {
+              if (idx >= path.length) {
+                orgEsophagus.setAttribute('stroke', '#cbd5e1');
+                orgStomach.setAttribute('stroke', '#cbd5e1');
+                orgSmallInt.setAttribute('stroke', '#cbd5e1');
+                orgLargeInt.setAttribute('stroke', '#cbd5e1');
+                food.setAttribute('cx', 120);
+                food.setAttribute('cy', 15);
+                
+                document.getElementById('lens-description').innerHTML = templates.digestive.description;
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
+                return;
+              }
+              
+              const pt = path[idx];
+              food.setAttribute('cx', pt.x);
+              food.setAttribute('cy', pt.y);
+              document.getElementById('lens-description').innerHTML = `💡 <strong>${pt.text}</strong>`;
+              
+              orgEsophagus.setAttribute('stroke', pt.highlight === orgEsophagus ? '#8b5cf6' : '#cbd5e1');
+              orgStomach.setAttribute('stroke', pt.highlight === orgStomach ? '#ef4444' : '#cbd5e1');
+              orgSmallInt.setAttribute('stroke', pt.highlight === orgSmallInt ? '#f97316' : '#cbd5e1');
+              orgLargeInt.setAttribute('stroke', pt.highlight === orgLargeInt ? '#eab308' : '#cbd5e1');
+              
+              idx++;
+              setTimeout(runStep, 1500);
+            }
+            runStep();
+          });
+        }
+      } else if (topic === 'circulatory') {
+        const chk = document.getElementById('circulatory-exercise');
+        const heart = document.getElementById('heart-g');
+        const pLungs = document.getElementById('path-lungs');
+        const pBody = document.getElementById('path-body');
+        const pRate = document.getElementById('pulse-rate');
+        
+        if (chk && heart) {
+          chk.addEventListener('change', function(e) {
+            if (e.target.checked) {
+              heart.style.animationDuration = '0.45s';
+              pLungs.style.animationDuration = '1.3s';
+              pBody.style.animationDuration = '1.3s';
+              pLungs.setAttribute('stroke', '#3b82f6');
+              pBody.setAttribute('stroke', '#ef4444');
+              pRate.textContent = "빠름 (140회/분)";
+              pRate.className = "text-rose-600 font-bold";
+              document.getElementById('lens-description').innerHTML = "🏃 <strong>운동할 때의 변화</strong>: 운동을 시작하면 전신 근육이 수축/이완하며 에너지를 소모하므로 엄청난 양의 산소가 필요해집니다. 이 산소를 공급하기 위해 심장이 급격히 수축하여 혈액 순환을 활성화시킵니다.";
+            } else {
+              heart.style.animationDuration = '1.2s';
+              pLungs.style.animationDuration = '4s';
+              pBody.style.animationDuration = '4s';
+              pLungs.setAttribute('stroke', '#93c5fd');
+              pBody.setAttribute('stroke', '#fca5a5');
+              pRate.textContent = "보통 (70회/분)";
+              pRate.className = "text-slate-500 font-bold";
+              document.getElementById('lens-description').innerHTML = templates.circulatory.description;
+            }
+          });
+        }
+      } else if (topic === 'respiratory') {
+        const chk = document.getElementById('respiratory-exercise');
+        const lungs = document.getElementById('lungs-g');
+        const bRate = document.getElementById('breath-rate');
+        
+        if (chk && lungs) {
+          chk.addEventListener('change', function(e) {
+            if (e.target.checked) {
+              lungs.style.animationDuration = '1.3s';
+              bRate.textContent = "가쁨 (35회/분)";
+              bRate.className = "text-rose-600 font-bold";
+              document.getElementById('lens-description').innerHTML = "🏃 <strong>운동할 때의 변화</strong>: 몸 안의 이산화탄소를 빠르게 뱉어내고 신선한 산소를 폐로 흡수하기 위해 가슴 근육과 가로막이 빠르게 운동하며 호흡수를 크게 끌어올립니다.";
+            } else {
+              lungs.style.animationDuration = '4s';
+              bRate.textContent = "보통 (15회/분)";
+              bRate.className = "text-slate-500 font-bold";
+              document.getElementById('lens-description').innerHTML = templates.respiratory.description;
+            }
+          });
+        }
+      } else if (topic === 'excretory') {
+        const btn = document.getElementById('btn-pee');
+        const fill = document.getElementById('bladder-fill');
+        const level = document.getElementById('urine-level');
+        const dropL = document.getElementById('drop-left');
+        const dropR = document.getElementById('drop-right');
+        
+        if (btn && fill && level) {
+          let urine = 0;
+          let progress = 0;
+          
+          currentInterval = setInterval(() => {
+            progress += 0.05;
+            if (progress > 1) {
+              progress = 0;
+              urine = Math.min(100, urine + 10);
+              level.textContent = `${urine}%`;
+              fill.style.clipPath = `inset(${100 - urine}% 0% 0% 0%)`;
+              
+              if (urine >= 90) {
+                level.textContent = `${urine}% (방광 가득 참!)`;
+                level.className = "text-rose-600 font-bold animate-pulse";
+              }
+            }
+            
+            const lx = 96 + progress * 17;
+            const ly = 51 + progress * 46;
+            dropL.setAttribute('cx', lx);
+            dropL.setAttribute('cy', ly);
+            
+            const rx = 144 - progress * 17;
+            const ry = 51 + progress * 46;
+            dropR.setAttribute('cx', rx);
+            dropR.setAttribute('cy', ry);
+          }, 150);
+          
+          btn.addEventListener('click', function() {
+            urine = 0;
+            level.textContent = "0%";
+            level.className = "text-slate-500 font-bold";
+            fill.style.clipPath = "inset(100% 0% 0% 0%)";
+            alert("쉬~ 오줌을 누어 방광을 깨끗하게 비웠어! 🚽");
+          });
+        }
+      }
+    }
+
+    // Init function
+    function init() {
+      // Load saved settings
+      settingsApiKey.value = apiKey;
+      settingsModel.value = selectedModel;
+
+
+
+      // Bind tab selectors (including dynamic panel width adjustments for wider executor view)
+      tabDashboard.addEventListener('click', () => {
+        tabDashboard.classList.add('border-brand-600', 'text-brand-600');
+        tabDashboard.classList.remove('border-transparent', 'text-slate-500');
+        tabSandbox.classList.add('border-transparent', 'text-slate-500');
+        tabSandbox.classList.remove('border-brand-600', 'text-brand-600');
+        
+        viewDashboard.classList.remove('hidden');
+        viewSandbox.classList.add('hidden');
+
+        // Restore normal width for dashboard
+        rightPanel.classList.remove('w-[850px]');
+        rightPanel.classList.add('w-[420px]');
+
+        // Update mobile view state
+        activeMobileView = 'dashboard';
+        updateMobileNavUI();
+      });
+
+      tabSandbox.addEventListener('click', () => {
+        tabSandbox.classList.add('border-brand-600', 'text-brand-600');
+        tabSandbox.classList.remove('border-transparent', 'text-slate-500');
+        tabDashboard.classList.add('border-transparent', 'text-slate-500');
+        tabDashboard.classList.remove('border-brand-600', 'text-brand-600');
+        
+        viewSandbox.classList.remove('hidden');
+        viewDashboard.classList.add('hidden');
+        
+        // Hide badge ping
+        sandboxBadge.classList.add('hidden');
+        if (mobileSandboxBadge) mobileSandboxBadge.classList.add('hidden');
+
+        // Expand panel width to give sandbox player more screen real estate
+        rightPanel.classList.remove('w-[420px]');
+        rightPanel.classList.add('w-[850px]');
+
+        // Update mobile view state
+        activeMobileView = 'sandbox';
+        updateMobileNavUI();
+      });
+
+      btnReloadSandbox.addEventListener('click', () => {
+        if (window.lastGeneratedHtml) {
+          sandboxIframe.srcdoc = window.lastGeneratedHtml;
+        }
+      });
+
+      // Default visualizer load
+      setTopic('default');
+
+      // Bind slide navigation listeners
+      document.getElementById('btn-prev-slide').addEventListener('click', () => {
+        goToSlide(currentSlideIdx - 1);
+      });
+      document.getElementById('btn-next-slide').addEventListener('click', () => {
+        goToSlide(currentSlideIdx + 1);
+      });
+      
+      const tabBtns = document.querySelectorAll('.lens-tab-btn');
+      tabBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const slide = e.currentTarget.getAttribute('data-slide');
+          const idx = slideTopics.indexOf(slide);
+          if (idx !== -1) {
+            goToSlide(idx);
+          }
+        });
+      });
+
+      const dots = document.querySelectorAll('#lens-dots span');
+      dots.forEach(dot => {
+        dot.addEventListener('click', (e) => {
+          const slide = e.currentTarget.getAttribute('data-dot');
+          const idx = slideTopics.indexOf(slide);
+          if (idx !== -1) {
+            goToSlide(idx);
+          }
+        });
+      });
+
+      // Render messages & setups
+      renderMessages();
+      updateStepper();
+
+      // Bind resize listener and run initial check
+      window.addEventListener('resize', handleResize);
+      handleResize();
+
+      // Show settings popup if key is missing and pool is empty
+      const isPoolUsed = (API_KEY_POOL && API_KEY_POOL.length > 0);
+      if (!apiKey && !isPoolUsed) {
+        openSettings();
+      }
+    }
+
+    // Modal Operations
+    function openSettings() {
+      settingsModal.classList.remove('hidden');
+    }
+
+    function closeSettings() {
+      const isPoolUsed = (API_KEY_POOL && API_KEY_POOL.length > 0);
+      if (!apiKey && !isPoolUsed) {
+        alert("AI 선생님과 과학 대화를 나누려면 Gemini API 키를 꼭 설정해야 해!");
+        return;
+      }
+      settingsModal.classList.add('hidden');
+    }
+
+    btnSettings.addEventListener('click', openSettings);
+    btnCloseSettings.addEventListener('click', closeSettings);
+    btnCancelSettings.addEventListener('click', closeSettings);
+
+    settingsForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const newKey = settingsApiKey.value.trim();
+      const newModel = settingsModel.value;
+
+      if (!newKey) {
+        alert("API 키를 올바르게 입력해 줘!");
+        return;
+      }
+
+      apiKey = newKey;
+      selectedModel = newModel;
+      localStorage.setItem('bodytech_api_key', apiKey);
+      localStorage.setItem('bodytech_model', selectedModel);
+
+      settingsModal.classList.add('hidden');
+      alert("설정이 저장되었어! 이제 대화를 시작해 보자.");
+    });
+
+    // Render all messages
+    function renderMessages() {
+      chatMessages.innerHTML = '';
+      
+      messages.forEach((msg, idx) => {
+        const isModel = msg.role === 'model';
+        const msgWrapper = document.createElement('div');
+        msgWrapper.className = `flex gap-4 ${isModel ? 'flex-row' : 'flex-row-reverse'} items-start`;
+
+        const avatar = document.createElement('div');
+        avatar.className = `w-9 h-9 flex-shrink-0 rounded-2xl flex items-center justify-center shadow-sm ${
+          isModel 
+            ? 'bg-gradient-to-tr from-brand-600 to-indigo-500 text-white' 
+            : 'bg-gradient-to-tr from-slate-600 to-slate-400 text-white'
+        }`;
+
+        if (isModel) {
+          avatar.innerHTML = `
+            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="10" rx="2" ry="2"></rect>
+              <path d="M12 2v4M8 5h8"></path>
+              <circle cx="8" cy="14" r="1" fill="currentColor"></circle>
+              <circle cx="16" cy="14" r="1" fill="currentColor"></circle>
+            </svg>
+          `;
+        } else {
+          avatar.innerHTML = `
+            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          `;
+        }
+
+        const content = document.createElement('div');
+        content.className = `max-w-[75%] rounded-2xl p-4 shadow-sm transition-all duration-300 ${
+          isModel 
+            ? 'bg-white border border-slate-200 text-slate-800 rounded-tl-none' 
+            : 'bg-brand-600 text-white rounded-tr-none'
+        }`;
+
+        if (isModel) {
+          const mdDiv = document.createElement('div');
+          mdDiv.className = 'markdown-content text-sm leading-relaxed';
+          try {
+            // Strip out ```html ... ``` blocks from the rendered chat text to hide raw code from students
+            let textToRender = msg.text.replace(/```html[\s\S]*?```/gi, '').trim();
+            if (textToRender === '') {
+              textToRender = "선생님이 과학 콘텐츠를 만들었단다! 우측 상단(또는 모바일 하단)의 **[🎮 콘텐츠 실행기]** 탭을 클릭하여 실행해보렴! 🎮";
+            }
+            mdDiv.innerHTML = marked.parse(textToRender);
+          } catch(e) {
+            mdDiv.textContent = msg.text;
+          }
+          content.appendChild(mdDiv);
+        } else {
+          const p = document.createElement('p');
+          p.className = 'whitespace-pre-wrap leading-relaxed text-sm';
+          p.textContent = msg.text;
+          content.appendChild(p);
+        }
+
+        msgWrapper.appendChild(avatar);
+        msgWrapper.appendChild(content);
+        chatMessages.appendChild(msgWrapper);
+      });
+
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Reset Chat logic
+    btnReset.addEventListener('click', function() {
+      if (confirm("정말로 대화를 처음부터 다시 시작할까요? 그동안 나눈 이야기가 지워집니다.")) {
+        messages = [{ role: 'model', text: INITIAL_MESSAGE }];
+        activeState = 0;
+        
+        // Reset sandbox
+        window.lastGeneratedHtml = null;
+        sandboxEmpty.classList.remove('hidden');
+        sandboxPlayer.classList.add('hidden');
+        sandboxIframe.srcdoc = '';
+        sandboxBadge.classList.add('hidden');
+        if (mobileSandboxBadge) mobileSandboxBadge.classList.add('hidden');
+        
+        activeMobileView = 'chat';
+        setTopic('default');
+        renderMessages();
+        updateStepper();
+        handleResize();
+      }
+    });
+
+
+
+    // Update Stepper elements based on activeState (Horizontal Stepper progress bar logic)
+    function updateStepper() {
+      const progressLine = document.getElementById('stepper-progress-line');
+      if (progressLine) {
+        progressLine.style.width = `${(activeState / 3) * 100}%`;
+      }
+
+      for (let i = 0; i <= 3; i++) {
+        const stepEl = document.getElementById(`step-${i}`);
+        if (!stepEl) continue;
+
+        const circle = stepEl.querySelector('.step-circle');
+        const title = stepEl.querySelector('.step-title');
+
+        if (i === activeState) {
+          // Active Step
+          circle.className = 'step-circle flex items-center justify-center w-9 h-9 rounded-xl border-2 bg-gradient-to-tr from-brand-600 to-indigo-600 border-white text-white scale-110 ring-4 ring-brand-100 shadow-md transition-all duration-300 text-xs font-bold z-10';
+          circle.innerHTML = `${i + 1}`;
+          title.className = 'step-title text-[9px] font-bold text-brand-600 mt-1.5 whitespace-nowrap';
+        } else if (i < activeState) {
+          // Past Step (Done)
+          circle.className = 'step-circle flex items-center justify-center w-9 h-9 rounded-xl border-2 bg-emerald-500 border-white text-white shadow-sm transition-all duration-300 text-xs font-bold z-10';
+          circle.innerHTML = `
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          `;
+          title.className = 'step-title text-[9px] font-bold text-slate-800 mt-1.5 whitespace-nowrap';
+        } else {
+          // Future Step (Locked)
+          circle.className = 'step-circle flex items-center justify-center w-9 h-9 rounded-xl border-2 bg-white border-slate-200 text-slate-400 shadow-sm transition-all duration-300 text-xs font-bold z-10';
+          circle.innerHTML = `${i + 1}`;
+          title.className = 'step-title text-[9px] font-bold text-slate-400 mt-1.5 whitespace-nowrap';
+        }
+      }
+    }
+
+
+
+    // Extract HTML code block from text response
+    function extractHtmlCode(text) {
+      const match = text.match(/```html\s*([\s\S]*?)\s*```/i);
+      if (match) {
+        const code = match[1];
+        if (code.includes('<!DOCTYPE') || code.includes('<html') || code.includes('<script') || code.includes('<div')) {
+          return code;
+        }
+      }
+      if (text.includes('<!DOCTYPE html>') || (text.includes('<html') && text.includes('</html>'))) {
+        return text;
+      }
+      return null;
+    }
+
+    // Submit handler
+    chatForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const userText = chatInput.value.trim();
+      if (!userText || isLoading) return;
+
+      chatInput.value = '';
+
+      // Check if API Key is empty
+      const isPoolUsed = (API_KEY_POOL && API_KEY_POOL.length > 0);
+      if (!apiKey && !isPoolUsed) {
+        openSettings();
+        messages.push({ role: 'user', text: userText });
+        messages.push({ 
+          role: 'model', 
+          text: "⚠️ **API 키가 설정되지 않았어!**\n우측 상단의 **설정(톱니바퀴 ⚙️) 버튼**을 눌러 Gemini API 키를 등록하고 대화를 시작하자!" 
+        });
+        renderMessages();
+        return;
+      }
+
+      // Add user message
+      messages.push({ role: 'user', text: userText });
+      renderMessages();
+
+      // Show loader
+      isLoading = true;
+      chatLoading.classList.remove('hidden');
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      try {
+        // Build payload (optimizing tokens by stripping raw HTML code blocks from chat history)
+        const apiMessages = messages.slice(0, messages.length - 1).map(msg => {
+          let textToSend = msg.text;
+          if (msg.role === 'model') {
+            // Replace large HTML code block with a token-saving placeholder comment
+            textToSend = textToSend.replace(/```html[\s\S]*?```/gi, '```html\n<!-- [토큰 절약을 위해 이전 게임 코드 내용 전송 생략] -->\n```');
+          }
+          return {
+            role: msg.role === 'model' ? 'model' : 'user',
+            parts: [{ text: textToSend }]
+          };
+        });
+        apiMessages.push({ role: 'user', parts: [{ text: userText }] });
+
+        let attempts = 0;
+        let success = false;
+        let data = null;
+        let lastErrorMsg = '';
+        const maxAttempts = isPoolUsed ? API_KEY_POOL.length : 1;
+
+        while (attempts < maxAttempts && !success) {
+          if (isPoolUsed) {
+            if (currentKeyIdx >= API_KEY_POOL.length) {
+              currentKeyIdx = 0;
+            }
+          }
+          const activeKey = isPoolUsed ? API_KEY_POOL[currentKeyIdx] : apiKey;
+
+          try {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${activeKey}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                systemInstruction: {
+                  parts: [{ text: SYSTEM_PROMPT }]
+                },
+                contents: apiMessages
+              })
+            });
+
+            if (response.ok) {
+              data = await response.json();
+              success = true;
+            } else {
+              const errData = await response.json().catch(() => ({}));
+              lastErrorMsg = errData?.error?.message || `상태 코드: ${response.status}`;
+              
+              if (isPoolUsed && (response.status === 429 || lastErrorMsg.includes('quota') || lastErrorMsg.includes('depleted') || lastErrorMsg.includes('limit'))) {
+                console.warn(`API 키 풀 인덱스 ${currentKeyIdx} 오류 발생으로 로테이션 작동: ${lastErrorMsg}`);
+                currentKeyIdx = (currentKeyIdx + 1) % API_KEY_POOL.length;
+                localStorage.setItem('bodytech_current_key_idx', currentKeyIdx);
+                attempts++;
+                continue;
+              } else {
+                throw new Error(lastErrorMsg);
+              }
+            }
+          } catch (err) {
+            lastErrorMsg = err.message;
+            if (isPoolUsed && attempts < maxAttempts - 1) {
+              console.warn(`API 키 풀 인덱스 ${currentKeyIdx} 예외 발생으로 로테이션 작동: ${lastErrorMsg}`);
+              currentKeyIdx = (currentKeyIdx + 1) % API_KEY_POOL.length;
+              localStorage.setItem('bodytech_current_key_idx', currentKeyIdx);
+              attempts++;
+              continue;
+            } else {
+              throw err;
+            }
+          }
+        }
+
+        if (!success) {
+          throw new Error(lastErrorMsg || "모든 API 키가 만료되었거나 에러가 발생했습니다.");
+        }
+        const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (aiText) {
+          messages.push({ role: 'model', text: aiText });
+          
+          // State Machine heuristic rules
+          if (aiText.includes("훌륭해") || aiText.includes("완벽해") || aiText.includes("참 잘했어")) {
+            activeState = 2;
+          }
+          if (aiText.includes("기획해볼까") || aiText.includes("퀴즈") || aiText.includes("게임") || aiText.includes("시뮬레이션") || aiText.includes("보상")) {
+            activeState = 3;
+          } else if (activeState === 0) {
+            activeState = 1;
+          }
+
+          // Dynamic Science Lens Topic check
+          const nextTopic = detectTopicFromHistory();
+          setTopic(nextTopic);
+
+          // Content Player (HTML Sandboxing) extraction
+          const htmlCode = extractHtmlCode(aiText);
+          if (htmlCode) {
+            window.lastGeneratedHtml = htmlCode;
+            sandboxEmpty.classList.add('hidden');
+            sandboxPlayer.classList.remove('hidden');
+            sandboxIframe.srcdoc = htmlCode;
+            
+            // Show badge notification
+            sandboxBadge.classList.remove('hidden');
+            if (mobileSandboxBadge) mobileSandboxBadge.classList.remove('hidden');
+
+            // Append helper bubble
+            messages.push({
+              role: 'model',
+              text: "🎁 **선생님이 너의 기획 아이디어를 가지고 실제 작동하는 과학 게임(시뮬레이션)을 만들었단다!** 우측 상단(또는 모바일 하단)의 **[🎮 콘텐츠 실행기]** 탭을 누르면 우리가 만든 게임을 바로 플레이할 수 있어! 재미있게 즐겨보렴!"
+            });
+          }
+
+          updateStepper();
+        } else {
+          throw new Error('응답 데이터를 찾을 수 없습니다.');
+        }
+
+      } catch (error) {
+        console.error(error);
+        messages.push({ 
+          role: 'model', 
+          text: `앗, 통신 중에 에러가 났어! API 키가 정확한지 확인해 주겠니?\n\n*에러 메시지: ${error.message}*` 
+        });
+      } finally {
+        isLoading = false;
+        chatLoading.classList.add('hidden');
+        renderMessages();
+      }
+    });
+
+    // Run init
+    window.onload = init;
+  </script>
+</body>
+</html>
