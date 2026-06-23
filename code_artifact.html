@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카드뉴스 메이커</title>
+    <!-- 폰트: Pretendard -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- html2canvas (이미지 저장용) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        body {
+            font-family: 'Pretendard Variable', sans-serif;
+            background-color: #f3f4f6;
+        }
+        
+        /* 스크롤바 커스텀 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+        /* 캔버스 캡처용 비율 고정 */
+        .card-container {
+            width: 100%;
+            max-width: 600px;
+            aspect-ratio: 1 / 1;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- 헤더 -->
+    <header class="bg-white shadow-sm px-6 py-4 flex items-center justify-between shrink-0 z-10">
+        <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <i class="ph ph-cards text-blue-600"></i> 질병 정보 카드뉴스 메이커
+        </h1>
+        <div class="text-sm text-gray-500">Design & Export</div>
+    </header>
+
+    <!-- 메인 콘텐츠 -->
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
+        
+        <!-- 왼쪽: 컨트롤 패널 (입력 폼) -->
+        <section class="w-full md:w-1/3 lg:w-[400px] bg-white border-r border-gray-200 flex flex-col h-full z-0 overflow-y-auto">
+            <div class="p-6 space-y-6">
+                
+                <!-- 기관 선택 -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">1. 관련 기관 선택</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="organ" value="소화기관" class="peer sr-only" checked onchange="updatePreview()">
+                            <div class="text-center px-3 py-2 rounded-lg border border-gray-200 peer-checked:bg-amber-50 peer-checked:border-amber-500 peer-checked:text-amber-700 transition-all font-medium text-sm">
+                                <i class="ph ph-hamburger mr-1"></i>소화기관
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="organ" value="순환기관" class="peer sr-only" onchange="updatePreview()">
+                            <div class="text-center px-3 py-2 rounded-lg border border-gray-200 peer-checked:bg-rose-50 peer-checked:border-rose-500 peer-checked:text-rose-700 transition-all font-medium text-sm">
+                                <i class="ph ph-heartbeat mr-1"></i>순환기관
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="organ" value="호흡기관" class="peer sr-only" onchange="updatePreview()">
+                            <div class="text-center px-3 py-2 rounded-lg border border-gray-200 peer-checked:bg-sky-50 peer-checked:border-sky-500 peer-checked:text-sky-700 transition-all font-medium text-sm">
+                                <i class="ph ph-wind mr-1"></i>호흡기관
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="organ" value="배설기관" class="peer sr-only" onchange="updatePreview()">
+                            <div class="text-center px-3 py-2 rounded-lg border border-gray-200 peer-checked:bg-emerald-50 peer-checked:border-emerald-500 peer-checked:text-emerald-700 transition-all font-medium text-sm">
+                                <i class="ph ph-drop mr-1"></i>배설기관
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 질병 이름 -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">2. 질병 이름</label>
+                    <input type="text" id="disease-name" placeholder="예: 위염, 고혈압, 천식..." 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                           oninput="updatePreview()">
+                </div>
+
+                <!-- 주요 증상 -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">3. 주요 증상 (최소 1개 필수)</label>
+                    <p class="text-xs text-gray-500 mb-2">최대 3개까지 입력할 수 있습니다.</p>
+                    <div class="space-y-2">
+                        <input type="text" id="symp-1" placeholder="증상 1 (필수)" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" oninput="updatePreview()">
+                        <input type="text" id="symp-2" placeholder="증상 2 (선택)" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" oninput="updatePreview()">
+                        <input type="text" id="symp-3" placeholder="증상 3 (선택)" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" oninput="updatePreview()">
+                    </div>
+                </div>
+
+                <!-- 치료 및 예방법 -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">4. 치료 및 예방법 (최소 1개 필수)</label>
+                    <p class="text-xs text-gray-500 mb-2">최대 3개까지 입력할 수 있습니다.</p>
+                    <div class="space-y-2">
+                        <input type="text" id="treat-1" placeholder="방법 1 (필수)" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" oninput="updatePreview()">
+                        <input type="text" id="treat-2" placeholder="방법 2 (선택)" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" oninput="updatePreview()">
+                        <input type="text" id="treat-3" placeholder="방법 3 (선택)" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" oninput="updatePreview()">
+                    </div>
+                </div>
+
+                <!-- 액션 버튼 -->
+                <div class="pt-4 border-t border-gray-200 grid grid-cols-2 gap-3 pb-8">
+                    <button onclick="downloadPNG()" class="flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-900 text-white py-3 px-4 rounded-lg font-semibold transition-colors shadow-sm">
+                        <i class="ph ph-download-simple text-lg"></i> PNG 저장
+                    </button>
+                    <button onclick="copyImage()" class="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-semibold transition-colors shadow-sm">
+                        <i class="ph ph-copy text-lg"></i> 이미지 복사
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 오른쪽: 미리보기 화면 -->
+        <section class="flex-1 p-6 md:p-12 flex items-center justify-center bg-gray-100 overflow-y-auto">
+            <div class="card-container shadow-2xl rounded-2xl overflow-hidden relative transition-all duration-300" id="card-preview">
+                <!-- 자바스크립트를 통해 내용이 여기에 렌더링 됩니다. -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 메시지 모달 (Alert 대체용) -->
+    <div id="msg-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-xl p-6 w-80 max-w-[90%] transform scale-95 transition-transform duration-300" id="msg-modal-content">
+            <div class="flex items-center justify-center w-12 h-12 rounded-full mb-4 mx-auto" id="msg-icon-bg">
+                <i class="ph text-2xl" id="msg-icon"></i>
+            </div>
+            <h3 class="text-lg font-bold text-center text-gray-800 mb-2" id="msg-title">알림</h3>
+            <p class="text-center text-gray-600 mb-6 text-sm" id="msg-text">메시지 내용</p>
+            <button onclick="closeModal()" class="w-full py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-medium transition-colors">확인</button>
+        </div>
+    </div>
+
+    <!-- 로딩 오버레이 (이미지 생성중) -->
+    <div id="loading-overlay" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-40 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="flex flex-col items-center">
+            <i class="ph ph-spinner-gap animate-spin text-4xl text-blue-600 mb-3"></i>
+            <p class="text-gray-700 font-medium">이미지를 생성하고 있습니다...</p>
+        </div>
+    </div>
+
+    <!-- Tailwind 동적 클래스 사전 로드 (숨김 처리) - Tailwind CDN이 클래스를 인식하게 함 -->
+    <div class="hidden">
+        <div class="bg-amber-50 bg-rose-50 bg-sky-50 bg-emerald-50 text-amber-600 text-rose-600 text-sky-600 text-emerald-600 border-amber-500 border-rose-500 border-sky-500 border-emerald-500 bg-amber-500 bg-rose-500 bg-sky-500 bg-emerald-500 text-amber-900 text-rose-900 text-sky-900 text-emerald-900 bg-amber-100 bg-rose-100 bg-sky-100 bg-emerald-100 border-amber-200 border-rose-200 border-sky-200 border-emerald-200 text-amber-800 text-rose-800 text-sky-800 text-emerald-800 shadow-amber-200 shadow-rose-200 shadow-sky-200 shadow-emerald-200"></div>
+    </div>
+
+    <script>
+        // 테마 색상 설정
+        const themes = {
+            '소화기관': {
+                bg: 'bg-amber-50',
+                cardBg: 'bg-white',
+                primaryText: 'text-amber-600',
+                darkText: 'text-amber-900',
+                border: 'border-amber-200',
+                accentBg: 'bg-amber-500',
+                accentLight: 'bg-amber-100',
+                iconColor: 'text-amber-500',
+                shadow: 'shadow-amber-200',
+                icon: 'ph-hamburger'
+            },
+            '순환기관': {
+                bg: 'bg-rose-50',
+                cardBg: 'bg-white',
+                primaryText: 'text-rose-600',
+                darkText: 'text-rose-900',
+                border: 'border-rose-200',
+                accentBg: 'bg-rose-500',
+                accentLight: 'bg-rose-100',
+                iconColor: 'text-rose-500',
+                shadow: 'shadow-rose-200',
+                icon: 'ph-heartbeat'
+            },
+            '호흡기관': {
+                bg: 'bg-sky-50',
+                cardBg: 'bg-white',
+                primaryText: 'text-sky-600',
+                darkText: 'text-sky-900',
+                border: 'border-sky-200',
+                accentBg: 'bg-sky-500',
+                accentLight: 'bg-sky-100',
+                iconColor: 'text-sky-500',
+                shadow: 'shadow-sky-200',
+                icon: 'ph-wind'
+            },
+            '배설기관': {
+                bg: 'bg-emerald-50',
+                cardBg: 'bg-white',
+                primaryText: 'text-emerald-600',
+                darkText: 'text-emerald-900',
+                border: 'border-emerald-200',
+                accentBg: 'bg-emerald-500',
+                accentLight: 'bg-emerald-100',
+                iconColor: 'text-emerald-500',
+                shadow: 'shadow-emerald-200',
+                icon: 'ph-drop'
+            }
+        };
+
+        // 초기 실행
+        document.addEventListener("DOMContentLoaded", () => {
+            updatePreview();
+        });
+
+        // 폼 유효성 검사
+        function validateForm() {
+            const disease = document.getElementById('disease-name').value.trim();
+            const symp1 = document.getElementById('symp-1').value.trim();
+            const treat1 = document.getElementById('treat-1').value.trim();
+
+            if (!disease) return "질병 이름을 입력해주세요.";
+            if (!symp1) return "주요 증상을 최소 1개 이상 입력해주세요.";
+            if (!treat1) return "치료 및 예방법을 최소 1개 이상 입력해주세요.";
+            
+            return null; // 에러 없음
+        }
+
+        // 실시간 미리보기 업데이트
+        function updatePreview() {
+            const organ = document.querySelector('input[name="organ"]:checked').value;
+            const disease = document.getElementById('disease-name').value.trim() || '질병 이름';
+            
+            // 증상 리스트 수집
+            const symptoms = [
+                document.getElementById('symp-1').value.trim(),
+                document.getElementById('symp-2').value.trim(),
+                document.getElementById('symp-3').value.trim()
+            ].filter(Boolean); // 빈 문자열 제거
+
+            // 치료/예방 리스트 수집
+            const treatments = [
+                document.getElementById('treat-1').value.trim(),
+                document.getElementById('treat-2').value.trim(),
+                document.getElementById('treat-3').value.trim()
+            ].filter(Boolean);
+
+            const theme = themes[organ];
+            const previewEl = document.getElementById('card-preview');
+
+            // 기본 안내 문구 (입력 전)
+            const sympHtml = symptoms.length > 0 
+                ? symptoms.map(s => `<li class="flex items-start gap-3"><i class="ph ph-check-circle ${theme.iconColor} text-xl mt-0.5 shrink-0"></i><span class="text-gray-700 font-medium leading-relaxed">${s}</span></li>`).join('')
+                : `<li class="flex items-center gap-3 text-gray-400"><i class="ph ph-warning-circle text-xl"></i><span>주요 증상을 입력해주세요 (최소 1개)</span></li>`;
+
+            const treatHtml = treatments.length > 0
+                ? treatments.map(t => `<li class="flex items-start gap-3"><i class="ph ph-pill ${theme.iconColor} text-xl mt-0.5 shrink-0"></i><span class="text-gray-700 font-medium leading-relaxed">${t}</span></li>`).join('')
+                : `<li class="flex items-center gap-3 text-gray-400"><i class="ph ph-warning-circle text-xl"></i><span>치료 및 예방법을 입력해주세요 (최소 1개)</span></li>`;
+
+            // HTML 생성 (Design.md 포맷 고려한 모던 카드 레이아웃)
+            previewEl.className = `card-container ${theme.bg} relative transition-all duration-300`;
+            previewEl.innerHTML = `
+                <!-- 장식용 배경 요소 -->
+                <div class="absolute top-0 right-0 w-64 h-64 ${theme.accentBg} rounded-bl-full opacity-10"></div>
+                <div class="absolute bottom-[-10%] left-[-10%] w-80 h-80 ${theme.accentBg} rounded-full opacity-10"></div>
+                
+                <div class="w-full h-full flex flex-col p-10 relative z-10 box-border">
+                    <!-- 카드 헤더 (기관 및 아이콘) -->
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 rounded-2xl ${theme.accentBg} flex items-center justify-center text-white text-2xl shadow-lg ${theme.shadow}">
+                            <i class="ph ${theme.icon}"></i>
+                        </div>
+                        <span class="font-bold text-lg ${theme.primaryText} tracking-wider bg-white px-3 py-1 rounded-full shadow-sm border ${theme.border}">
+                            ${organ} 정보
+                        </span>
+                    </div>
+
+                    <!-- 타이틀 (질병 이름) -->
+                    <h2 class="text-[3.5rem] font-black leading-tight ${theme.darkText} mb-8 drop-shadow-sm break-keep">
+                        ${disease}
+                    </h2>
+
+                    <div class="flex-1 flex flex-col gap-6">
+                        <!-- 주요 증상 섹션 -->
+                        <div class="bg-white/80 backdrop-blur-md p-6 rounded-2xl border ${theme.border} shadow-sm flex-1">
+                            <h3 class="text-xl font-bold ${theme.darkText} mb-4 flex items-center gap-2">
+                                <i class="ph ph-thermometer ${theme.primaryText} text-2xl"></i> 주요 증상
+                            </h3>
+                            <ul class="space-y-3">
+                                ${sympHtml}
+                            </ul>
+                        </div>
+
+                        <!-- 치료 및 예방법 섹션 -->
+                        <div class="bg-white/80 backdrop-blur-md p-6 rounded-2xl border ${theme.border} shadow-sm flex-1">
+                            <h3 class="text-xl font-bold ${theme.darkText} mb-4 flex items-center gap-2">
+                                <i class="ph ph-first-aid ${theme.primaryText} text-2xl"></i> 치료 및 예방법
+                            </h3>
+                            <ul class="space-y-3">
+                                ${treatHtml}
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- 푸터 (출처/장식) -->
+                    <div class="mt-6 flex justify-between items-center text-sm font-semibold ${theme.primaryText} opacity-70">
+                        <span>무정 건강 정보 카드 뉴스</span>
+                        <div class="flex items-center gap-1"><i class="ph ph-activity text-lg"></i> 5학년 2반</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // PNG 다운로드
+        async function downloadPNG() {
+            const error = validateForm();
+            if (error) {
+                showModal('입력 오류', error, true);
+                return;
+            }
+
+            showLoading(true);
+            try {
+                const canvas = await generateCanvas();
+                const link = document.createElement('a');
+                const disease = document.getElementById('disease-name').value.trim();
+                link.download = `카드뉴스_${disease}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch (err) {
+                console.error(err);
+                showModal('오류', '이미지 저장에 실패했습니다.', true);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // 이미지 복사
+        async function copyImage() {
+            const error = validateForm();
+            if (error) {
+                showModal('입력 오류', error, true);
+                return;
+            }
+
+            showLoading(true);
+            try {
+                const canvas = await generateCanvas();
+                canvas.toBlob(async (blob) => {
+                    try {
+                        const item = new ClipboardItem({ 'image/png': blob });
+                        await navigator.clipboard.write([item]);
+                        showModal('성공', '이미지가 클립보드에 복사되었습니다.<br>원하는 곳(카카오톡, 문서 등)에 붙여넣기(Ctrl+V) 하세요.', false);
+                    } catch (clipErr) {
+                        console.error('Clipboard write error:', clipErr);
+                        showModal('복사 실패', '브라우저 보안 설정으로 인해 클립보드 복사를 지원하지 않습니다.<br>[PNG 저장] 버튼을 이용해주세요.', true);
+                    } finally {
+                        showLoading(false);
+                    }
+                });
+            } catch (err) {
+                console.error(err);
+                showModal('오류', '이미지 생성에 실패했습니다.', true);
+                showLoading(false);
+            }
+        }
+
+        // html2canvas 공통 함수 (고해상도 렌더링 지원)
+        async function generateCanvas() {
+            const element = document.getElementById('card-preview');
+            // html2canvas 옵션: scale을 높여 고화질로 캡처
+            const canvas = await html2canvas(element, {
+                scale: 3, // 1080x1080 이상의 화질을 위해 스케일 업
+                useCORS: true,
+                backgroundColor: null,
+                logging: false
+            });
+            return canvas;
+        }
+
+        // UI 유틸: 모달창
+        function showModal(title, text, isError) {
+            document.getElementById('msg-title').innerText = title;
+            document.getElementById('msg-text').innerHTML = text; // html 허용 (br 태그용)
+            
+            const iconBg = document.getElementById('msg-icon-bg');
+            const icon = document.getElementById('msg-icon');
+
+            if (isError) {
+                iconBg.className = 'flex items-center justify-center w-12 h-12 rounded-full mb-4 mx-auto bg-red-100 text-red-600';
+                icon.className = 'ph ph-warning text-2xl';
+            } else {
+                iconBg.className = 'flex items-center justify-center w-12 h-12 rounded-full mb-4 mx-auto bg-green-100 text-green-600';
+                icon.className = 'ph ph-check-circle text-2xl';
+            }
+
+            const modal = document.getElementById('msg-modal');
+            const modalContent = document.getElementById('msg-modal-content');
+            
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('scale-95');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('msg-modal');
+            const modalContent = document.getElementById('msg-modal-content');
+            
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modalContent.classList.add('scale-95');
+        }
+
+        // UI 유틸: 로딩 오버레이
+        function showLoading(show) {
+            const loader = document.getElementById('loading-overlay');
+            if (show) {
+                loader.classList.remove('opacity-0', 'pointer-events-none');
+            } else {
+                loader.classList.add('opacity-0', 'pointer-events-none');
+            }
+        }
+    </script>
+</body>
+</html>
