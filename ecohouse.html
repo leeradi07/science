@@ -1,0 +1,1713 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>마이에코홈 3D - 초등 5학년 자원과 에너지 주택 만들기</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js & OrbitControls CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts: Jua & Noto Sans KR -->
+  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;600;700;800&family=Outfit:wght@700;900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            jua: ['Jua', 'sans-serif'],
+            noto: ['Noto Sans KR', 'sans-serif'],
+            outfit: ['Outfit', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 8px;
+    }
+    .panel-glass {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+    .hud-glass {
+      background: rgba(15, 23, 42, 0.90);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .blueprint-pattern {
+      background-color: #0f172a;
+      background-size: 24px 24px;
+      background-image: 
+        linear-gradient(to right, rgba(51, 65, 85, 0.35) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(51, 65, 85, 0.35) 1px, transparent 1px);
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .animate-pulse-slow {
+      animation: pulse-ring 2.4s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-800 h-screen w-screen overflow-hidden flex flex-col">
+
+  <!-- 1. 상단 헤더 네비게이션 -->
+  <header class="bg-white/95 border-b border-slate-200 px-3 sm:px-5 py-2.5 flex items-center justify-between z-20 shadow-sm shrink-0">
+    <div class="flex items-center gap-2.5 sm:gap-3">
+      <div class="w-10 h-10 sm:w-11 sm:h-11 bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-2xl shadow-md flex items-center justify-center text-xl shadow-emerald-500/20">
+        <i class="fa-solid fa-house-chimney-user"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-base sm:text-xl font-black font-jua text-slate-800 tracking-tight">
+            마이에코홈 3D <span class="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full text-xs font-bold border border-emerald-300">에코하우스 만들기</span>
+          </h1>
+          <span class="bg-amber-100 text-amber-900 text-[11px] font-bold px-2 py-0.5 rounded-full border border-amber-300 hidden md:inline-block">
+            초등 5학년 2학기 과학 [4. 자원과 에너지]
+          </span>
+        </div>
+        <p class="text-[11px] sm:text-xs text-slate-500 hidden sm:block">단열재로 열 이동을 막고 자연 에너지로 전기를 만드는 친환경 집을 완성해 보세요!</p>
+      </div>
+    </div>
+
+    <!-- 보유 에코 코인 및 버튼 모음 -->
+    <div class="flex items-center gap-2 sm:gap-3">
+      <!-- 퀴즈 풀고 코인 받기 버튼 -->
+      <button id="btn-open-quiz" class="px-3 py-1.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white transition flex items-center gap-1.5 font-black font-jua text-xs shadow-md shadow-orange-500/20 active:scale-95">
+        <i class="fa-solid fa-file-circle-question text-sm"></i>
+        <span>단원 퀴즈 풀기</span>
+        <span class="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px] hidden sm:inline">최대 100토큰</span>
+      </button>
+
+      <!-- 내 에코 코인 지갑 -->
+      <div class="flex items-center gap-2 bg-amber-50 border-2 border-amber-300 rounded-2xl px-3 py-1 shadow-sm">
+        <div class="w-7 h-7 rounded-xl bg-amber-400 text-amber-950 flex items-center justify-center font-bold text-xs shadow-sm">
+          <i class="fa-solid fa-coins"></i>
+        </div>
+        <div>
+          <span class="text-[9px] block font-bold text-amber-800 leading-none">내 에코 코인</span>
+          <div class="flex items-baseline gap-0.5">
+            <span id="token-display" class="text-base sm:text-lg font-black font-jua text-amber-900">0</span>
+            <span class="text-[10px] text-amber-700 font-bold">토큰</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5학년 교과서 원리 모달 버튼 -->
+      <button id="btn-guide" class="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 transition flex items-center gap-1.5 border border-slate-200 font-bold text-xs">
+        <i class="fa-solid fa-book-open text-emerald-600 text-sm"></i>
+        <span class="hidden sm:inline">교과서 힌트</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+    <!-- 2. 3D 뷰포트 영역 (단순화된 뷰 컨트롤 적용) -->
+    <div id="canvas-container" class="relative flex-1 h-[46vh] md:h-full blueprint-pattern cursor-grab active:cursor-grabbing overflow-hidden">
+      <canvas id="webgl-canvas" class="w-full h-full block"></canvas>
+
+      <!-- 3D 뷰포트 상단: 필수 뷰 컨트롤만 깔끔하게 배치! -->
+      <div class="absolute top-3 left-3 flex flex-wrap items-center gap-2 z-10">
+        <!-- 뷰 1: 집 전체 보기 -->
+        <button id="btn-view-all" class="panel-glass px-3 py-2 rounded-2xl shadow-xl border border-slate-200 text-xs font-black font-jua text-slate-800 hover:bg-slate-100 transition active:scale-95 flex items-center gap-1.5">
+          <i class="fa-solid fa-eye text-emerald-600"></i>
+          <span>전체 보기</span>
+        </button>
+
+        <!-- 뷰 2: 정면 보기 -->
+        <button id="btn-view-front" class="panel-glass px-3 py-2 rounded-2xl shadow-xl border border-slate-200 text-xs font-black font-jua text-slate-800 hover:bg-slate-100 transition active:scale-95 flex items-center gap-1.5">
+          <i class="fa-solid fa-door-open text-blue-600"></i>
+          <span>정면 보기</span>
+        </button>
+
+        <!-- 뷰 3: 천천히 회전 토글 -->
+        <button id="btn-auto-rotate" class="panel-glass px-3 py-2 rounded-2xl shadow-xl border border-slate-200 text-xs font-black font-jua text-emerald-800 bg-emerald-50 hover:bg-emerald-100 transition active:scale-95 flex items-center gap-1.5">
+          <i class="fa-solid fa-rotate text-emerald-600"></i>
+          <span id="rotate-label">회전 중지</span>
+        </button>
+      </div>
+
+      <!-- 장착 성공 시 화면 상단 칭찬 배너 -->
+      <div id="equip-banner" class="absolute top-14 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 text-white px-5 py-2 rounded-2xl shadow-2xl font-jua text-xs sm:text-sm flex items-center gap-2 border-2 border-emerald-300 opacity-0 pointer-events-none transition-all duration-300 z-20 scale-90">
+        <i class="fa-solid fa-circle-check text-amber-300 text-base"></i>
+        <span id="equip-banner-text">새로운 친환경 부품이 장착되었어요!</span>
+      </div>
+
+      <!-- 좌측 하단: 5학년 눈높이 실시간 온도계 & 에너지 HUD -->
+      <div class="absolute bottom-3 left-3 hud-glass p-3.5 rounded-2xl text-white border border-slate-700/80 shadow-2xl w-[280px] sm:w-[320px] pointer-events-none z-10">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-700/70 mb-2">
+          <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+            <i class="fa-solid fa-temperature-half text-amber-400"></i> 우리 집 실내 온도계
+          </span>
+          <span id="hud-temp-badge" class="text-xs font-bold px-2 py-0.5 rounded-full bg-rose-500/40 text-rose-200 border border-rose-400/50">
+            실내 14.5℃ (추워요 ❄️)
+          </span>
+        </div>
+
+        <!-- 열 손실(열의 이동) 게이지 -->
+        <div class="space-y-1 mb-2">
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="text-slate-300 font-medium">밖으로 빠져나가는 열 (열 손실)</span>
+            <span id="hud-loss-text" class="font-black text-rose-400 font-outfit">100% (심함)</span>
+          </div>
+          <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700">
+            <div id="hud-loss-bar" class="h-full bg-gradient-to-r from-emerald-400 via-amber-400 to-rose-500 w-full transition-all duration-500 rounded-full"></div>
+          </div>
+        </div>
+
+        <!-- 재생 에너지 발전량 -->
+        <div class="space-y-1 mb-2">
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="text-slate-300 font-medium">태양·지열로 만든 깨끗한 전기</span>
+            <span id="hud-clean-text" class="font-black text-cyan-300 font-outfit">0 kWh</span>
+          </div>
+          <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700">
+            <div id="hud-clean-bar" class="h-full bg-cyan-400 w-0 transition-all duration-500 rounded-full"></div>
+          </div>
+        </div>
+
+        <!-- 5학년 교과서 한 줄 과학 알림 -->
+        <div class="bg-slate-800/90 p-2 rounded-xl text-[11px] text-emerald-200 border border-slate-700/60 flex items-start gap-1.5">
+          <i class="fa-solid fa-lightbulb text-amber-300 text-xs mt-0.5 shrink-0"></i>
+          <span id="hud-tip">벽에 단열재를 채우고 3중창을 달아 온기를 지켜보세요!</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 우측: 부품 상점 및 위치별 다중 장착 패널 -->
+    <div class="w-full md:w-[430px] lg:w-[470px] bg-white border-l border-slate-200 flex flex-col h-[54vh] md:h-full z-10 shadow-2xl">
+      <!-- 상점 헤더 -->
+      <div class="p-3 sm:p-4 border-b border-slate-200 bg-slate-50 shrink-0">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <h2 class="text-sm sm:text-base font-black font-jua text-slate-800 flex items-center gap-1.5">
+              <i class="fa-solid fa-screwdriver-wrench text-emerald-600"></i>
+              <span>친환경 에너지 도구함</span>
+            </h2>
+            <p class="text-[11px] text-slate-500">위치를 선택하여 2번 이상 나누어 장착할 수 있어요!</p>
+          </div>
+          <span id="shop-count-badge" class="text-xs font-black bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full border border-emerald-300 font-outfit">
+            장착 0 / 16 곳
+          </span>
+        </div>
+
+        <!-- 카테고리 탭 -->
+        <div class="grid grid-cols-4 gap-1 p-1 bg-slate-200/70 rounded-xl text-xs font-bold">
+          <button onclick="changeCategory('all')" id="tab-all" class="cat-btn py-1 rounded-lg bg-white text-emerald-800 shadow-sm transition font-black">전체</button>
+          <button onclick="changeCategory('insulation')" id="tab-insulation" class="cat-btn py-1 rounded-lg text-slate-600 hover:text-slate-900 transition">벽·창문</button>
+          <button onclick="changeCategory('air_shade')" id="tab-air_shade" class="cat-btn py-1 rounded-lg text-slate-600 hover:text-slate-900 transition">환기·정원</button>
+          <button onclick="changeCategory('renewable')" id="tab-renewable" class="cat-btn py-1 rounded-lg text-slate-600 hover:text-slate-900 transition">재생에너지</button>
+        </div>
+      </div>
+
+      <!-- 아이템 카드 목록 (각 카드별 위치 선택 장착 UI) -->
+      <div id="items-list" class="flex-1 overflow-y-auto p-3 space-y-3">
+        <!-- JS로 동적 렌더링 -->
+      </div>
+
+      <!-- 하단 예산 요약 및 성적표 발급 버튼 -->
+      <div class="p-3 sm:p-4 border-t border-slate-200 bg-white shrink-0 flex flex-col gap-2">
+        <div class="flex items-center justify-between text-xs px-1 font-bold">
+          <span class="text-slate-600">남은 코인: <strong id="foot-coins" class="text-amber-600 text-sm font-outfit font-black">0 토큰</strong></span>
+          <span class="text-slate-600">에너지 효율 향상: <strong id="foot-savings" class="text-emerald-600 text-sm font-outfit font-black">0%</strong></span>
+        </div>
+
+        <div class="flex gap-2">
+          <button id="btn-reset-everything" class="px-3 py-2.5 rounded-xl border border-slate-300 text-slate-600 font-bold text-xs hover:bg-slate-100 transition flex items-center gap-1 shrink-0" title="모든 부품 해제">
+            <i class="fa-solid fa-rotate-left"></i> 처음부터
+          </button>
+          <button id="btn-open-report" class="flex-1 py-3 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold font-jua text-sm sm:text-base shadow-lg shadow-emerald-600/20 transition active:scale-[0.99] flex items-center justify-center gap-2">
+            <i class="fa-solid fa-award text-base"></i>
+            <span>내 에코하우스 탐구 성적표 받기!</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 4. [모달 1] 5학년 2학기 4단원 '자원과 에너지' 퀴즈 모달 (총 4문제 = 100토큰) -->
+  <div id="quiz-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-100 max-h-[92vh] overflow-y-auto flex flex-col">
+      <!-- 퀴즈 헤더 -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl shadow-sm">
+            <i class="fa-solid fa-lightbulb"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-base sm:text-lg font-black font-jua text-slate-800">단원 탐구 퀴즈 도전!</h3>
+              <span class="bg-amber-100 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-300">1문제당 25토큰</span>
+            </div>
+            <p class="text-[11px] text-slate-500">초등 5학년 2학기 과학 [4. 자원과 에너지]</p>
+          </div>
+        </div>
+        <button id="btn-close-quiz" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- 퀴즈 안내문 -->
+      <div class="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-950 mb-3 leading-relaxed">
+        <p class="font-bold flex items-center gap-1.5 mb-1">
+          <i class="fa-solid fa-coins text-amber-600"></i>
+          <span>퀴즈를 맞춰 에코하우스 건축 토큰을 획득하세요!</span>
+        </p>
+        <p class="text-[11px] text-amber-800">
+          교과서에서 배운 4문제를 모두 맞히면 <strong>총 100토큰</strong>을 받아 멋진 친환경 집을 지을 수 있어요. (언제든 다시 풀 수 있어요!)
+        </p>
+      </div>
+
+      <!-- 4개 문제 렌더링 영역 -->
+      <div id="quiz-questions-box" class="space-y-4 flex-1">
+        <!-- JS로 동적 렌더링 -->
+      </div>
+
+      <!-- 퀴즈 하단 제출/완료 버튼 -->
+      <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+        <div class="text-xs font-bold text-slate-600">
+          획득 토큰: <strong id="quiz-score-preview" class="text-amber-600 font-outfit text-base font-black">0</strong> / 100 토큰
+        </div>
+        <button id="btn-submit-quiz" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold font-jua text-sm shadow-md transition active:scale-95 flex items-center gap-1.5">
+          <i class="fa-solid fa-circle-check"></i>
+          <span>점수 확정하고 집 지으러 가기!</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. [모달 2] 5학년 교과서 원리 모달 -->
+  <div id="guide-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-graduation-cap"></i>
+          </div>
+          <div>
+            <h3 class="text-base sm:text-lg font-bold font-jua text-slate-800">에너지를 효율적으로 이용하는 집의 원리</h3>
+            <p class="text-[11px] text-slate-500">『과학』 96쪽~97쪽 / 『실험관찰』 62쪽~63쪽</p>
+          </div>
+        </div>
+        <button id="btn-close-guide" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2.5 text-xs text-slate-600 leading-relaxed">
+        <div class="p-3 bg-emerald-50 rounded-2xl border border-emerald-200">
+          <h4 class="font-bold text-emerald-900 mb-0.5 flex items-center gap-1 text-xs">
+            <i class="fa-solid fa-house-chimney text-emerald-600"></i> 단열이 잘된 집은 온도 변화가 작아요!
+          </h4>
+          <p class="text-[11px] text-emerald-800">
+            실험관찰 62쪽 실험처럼, 단열재를 넣고 창문에 뽁뽁이(이중창·삼중창)를 붙이면 바깥과의 <strong>열 이동을 막아 집 안의 따뜻한 온도가 오래 유지</strong>됩니다.
+          </p>
+        </div>
+
+        <div class="space-y-1.5 text-[11px]">
+          <div class="p-2 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-2">
+            <span class="text-xl">🧱</span>
+            <div>
+              <strong class="text-slate-800 font-bold block">단열재 (벽 단열)</strong>
+              <span>벽을 통해 온기가 바깥으로 달아나거나 찬 기운이 들어오지 못하게 막아줍니다.</span>
+            </div>
+          </div>
+          <div class="p-2 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-2">
+            <span class="text-xl">🪟</span>
+            <div>
+              <strong class="text-slate-800 font-bold block">이중창·삼중창</strong>
+              <span>유리 사이의 공기층이 열의 전도를 막아 창문을 통한 에너지 손실을 줄여줍니다.</span>
+            </div>
+          </div>
+          <div class="p-2 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-2">
+            <span class="text-xl">🌀</span>
+            <div>
+              <strong class="text-slate-800 font-bold block">열 교환기 (환기 장치)</strong>
+              <span>나가는 따뜻한 공기의 열을 빼앗아 새로 들어오는 찬 공기를 데워주어 온도를 지켜요.</span>
+            </div>
+          </div>
+          <div class="p-2 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-2">
+            <span class="text-xl">⛱️</span>
+            <div>
+              <strong class="text-slate-800 font-bold block">햇빛 차양</strong>
+              <span>한여름 뜨거운 햇빛은 가려주고, 겨울철 따스한 햇빛은 깊숙이 들어오게 돕습니다.</span>
+            </div>
+          </div>
+          <div class="p-2 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-2">
+            <span class="text-xl">☀️</span>
+            <div>
+              <strong class="text-slate-800 font-bold block">태양광 발전 & 지열 에너지</strong>
+              <span>지붕에서 햇빛으로 전기를 만들고, 사계절 일정한 땅속 온기로 냉난방을 해결해요.</span>
+            </div>
+          </div>
+          <div class="p-2 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-2">
+            <span class="text-xl">💧</span>
+            <div>
+              <strong class="text-slate-800 font-bold block">옥상 정원 & 빗물 저금통</strong>
+              <span>옥상 잔디가 집을 시원하게 해주고, 모아둔 빗물은 마당 화단 물주기로 재활용해요.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button id="btn-close-guide-2" class="mt-4 w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold font-jua text-xs transition">
+        확인 완료! 에코하우스 꾸미기 🛠️
+      </button>
+    </div>
+  </div>
+
+  <!-- 6. [모달 3] 최종 탐구 성적표 모달 -->
+  <div id="report-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 max-h-[92vh] overflow-y-auto">
+      <div class="text-center pb-3 border-b border-slate-200 mb-3 relative">
+        <div id="report-stamp" class="absolute -top-1 right-0 rotate-12 bg-emerald-600 text-white font-jua px-3 py-1 rounded-xl text-xs border-2 border-dashed border-white shadow-md">
+          에너지 챔피언! 🏆
+        </div>
+        <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300 font-outfit">
+          5학년 2학기 과학 탐구 보고서
+        </span>
+        <h3 class="text-lg sm:text-xl font-black font-jua text-slate-800 mt-1">🌱 내가 만든 친환경 에코하우스 성적표</h3>
+        <p class="text-[11px] text-slate-500">열 손실을 줄이고 지속가능한 에너지를 채웠어요!</p>
+      </div>
+
+      <!-- 3대 절약 성과 -->
+      <div class="grid grid-cols-3 gap-2 mb-3 text-center">
+        <div class="bg-slate-50 p-2 rounded-2xl border border-slate-200">
+          <span class="text-[10px] text-slate-500 font-bold block mb-0.5">에너지 효율 향상</span>
+          <span id="rep-savings" class="text-lg sm:text-xl font-black font-outfit text-emerald-600">0%</span>
+        </div>
+        <div class="bg-slate-50 p-2 rounded-2xl border border-slate-200">
+          <span class="text-[10px] text-slate-500 font-bold block mb-0.5">줄인 온실가스</span>
+          <span id="rep-carbon" class="text-lg sm:text-xl font-black font-outfit text-teal-600">0 kg</span>
+        </div>
+        <div class="bg-slate-50 p-2 rounded-2xl border border-slate-200">
+          <span class="text-[10px] text-slate-500 font-bold block mb-0.5">소나무 효과</span>
+          <span id="rep-trees" class="text-lg sm:text-xl font-black font-outfit text-amber-600">0 그루</span>
+        </div>
+      </div>
+
+      <!-- 장착한 위치별 목록 -->
+      <div class="mb-3">
+        <h4 class="text-xs font-bold text-slate-500 mb-1">우리 집에 장착한 친환경 부품 위치들:</h4>
+        <div id="rep-tags-box" class="flex flex-wrap gap-1"></div>
+      </div>
+
+      <!-- 선생님 코멘트 -->
+      <div id="rep-feedback-box" class="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-950 leading-relaxed mb-4"></div>
+
+      <button id="btn-close-report" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold font-jua text-xs transition">
+        확인하고 계속 꾸미기! 👏
+      </button>
+    </div>
+  </div>
+
+  <!-- 토스트 알림 메시지 -->
+  <div id="toast" class="fixed top-14 left-1/2 -translate-x-1/2 bg-slate-900/95 text-white px-4 py-2 rounded-2xl text-xs font-bold shadow-2xl pointer-events-none opacity-0 transition-all duration-300 z-50 flex items-center gap-2 border border-slate-700 scale-95">
+    <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
+    <span id="toast-msg">알림</span>
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. 초등 5학년 2학기 [4. 자원과 에너지] 퀴즈 데이터 (4문항 * 25점 = 100토큰)
+    // ==========================================
+    const QUIZ_DATA = [
+      {
+        id: 1,
+        standard: '[6과08-01]',
+        question: 'Q1. 물, 산림, 광물 자원 중 석탄이나 철처럼 한 번 사용하고 나면 다시 만들어지기 어려워 아껴 써야 하는 유한한 자원은 무엇일까요?',
+        options: [
+          { text: '광물 자원 (석탄, 철 등)', isCorrect: true },
+          { text: '바람 자원', isCorrect: false },
+          { text: '햇빛 자원', isCorrect: false },
+          { text: '무한 자원', isCorrect: false }
+        ],
+        explanation: '정답입니다! 금속이나 석탄 같은 광물 자원은 한번 쓰고 나면 다시 생겨나기까지 오랜 시간이 걸리거나 양이 한정되어 있어요.'
+      },
+      {
+        id: 2,
+        standard: '[6과08-02]',
+        question: 'Q2. 태양 빛, 바람, 물, 땅속 열과 같이 자연에서 계속 얻을 수 있고 환경오염을 줄이는 깨끗한 에너지를 무엇이라고 할까요?',
+        options: [
+          { text: '일회용 에너지', isCorrect: false },
+          { text: '재생 에너지', isCorrect: true },
+          { text: '화석 에너지', isCorrect: false },
+          { text: '인공 에너지', isCorrect: false }
+        ],
+        explanation: '정답입니다! 태양 에너지, 풍력, 수력, 지열 에너지 등은 지속가능하게 계속 이용할 수 있는 재생 에너지예요.'
+      },
+      {
+        id: 3,
+        standard: '[6과08-03]',
+        question: 'Q3. [실험관찰 62쪽] 집 모형 창문에 뽁뽁이를 붙이고 벽에 단열재를 채우면, 단열하지 않은 집보다 실내 온도 변화가 어떻게 될까요?',
+        options: [
+          { text: '온도 변화가 더 작다 (온기가 오래 유지됨)', isCorrect: true },
+          { text: '온도 변화가 더 크다 (열이 팍팍 식음)', isCorrect: false },
+          { text: '온도가 영하로 뚝 떨어진다', isCorrect: false },
+          { text: '아무런 차이가 없다', isCorrect: false }
+        ],
+        explanation: '정답입니다! 단열재와 이중창(뽁뽁이)은 열이 밖으로 달아나는 것을 꽉 막아주어 실내 온도가 잘 떨어지지 않고 일정하게 유지돼요.'
+      },
+      {
+        id: 4,
+        standard: '[6과08-03]',
+        question: 'Q4. 우리 생활에서 자원과 에너지를 효율적이고 지속가능하게 이용하는 올바른 실천 방법은 무엇일까요?',
+        options: [
+          { text: '빈방에 형광등과 TV를 항상 켜 둔다', isCorrect: false },
+          { text: '창문을 활짝 열어둔 채 난방기를 세게 튼다', isCorrect: false },
+          { text: '사용하지 않는 전기 기구 플러그를 뽑고 실내 적정 온도를 지킨다', isCorrect: true },
+          { text: '가까운 거리도 무조건 큰 자동차를 타고 다닌다', isCorrect: false }
+        ],
+        explanation: '정답입니다! 쓰지 않는 플러그 뽑기, 적정 실내 온도 유지, 빗물 재사용 등 작은 실천이 지구를 지켜요.'
+      }
+    ];
+
+    // ==========================================
+    // 2. 도구함 아이템 정의: 각 아이템별 복수 위치(2~3회) 슬롯 분할
+    // ==========================================
+    const PASSIVE_ITEMS = [
+      {
+        id: 'insulation',
+        category: 'insulation',
+        name: '두꺼운 단열재 (벽 단열)',
+        icon: 'fa-shield-halved',
+        color: 'text-amber-600',
+        bg: 'bg-amber-100',
+        desc: '벽을 통해 온기가 밖으로 빠져나가지 못하도록 두꺼운 단열재 옷을 입혀 실내 온도를 지켜요.',
+        science: '열의 전도를 막아 보온병처럼 집을 따뜻하고 시원하게 유지합니다.',
+        slots: [
+          { slotId: 'ins_1f', label: '1층 외벽 단열', cost: 15, lossCut: 20, cleanPower: 0 },
+          { slotId: 'ins_2f', label: '2층 외벽 단열', cost: 15, lossCut: 15, cleanPower: 0 }
+        ]
+      },
+      {
+        id: 'triple_win',
+        category: 'insulation',
+        name: '3중 보온 창문',
+        icon: 'fa-table-cells',
+        color: 'text-sky-600',
+        bg: 'bg-sky-100',
+        desc: '유리 3장과 공기층이 창문을 통해 달아나는 열을 튕겨내 보온병 효과를 만들어요.',
+        science: '이중창과 삼중창 사이의 공기층이 열의 이동을 크게 줄여줍니다.',
+        slots: [
+          { slotId: 'win_1f_l', label: '1층 좌측 거실창', cost: 10, lossCut: 10, cleanPower: 0 },
+          { slotId: 'win_1f_r', label: '1층 우측 창문', cost: 10, lossCut: 10, cleanPower: 0 },
+          { slotId: 'win_2f', label: '2층 방 창문', cost: 10, lossCut: 10, cleanPower: 0 }
+        ]
+      },
+      {
+        id: 'shading',
+        category: 'air_shade',
+        name: '햇빛 차양 (어닝)',
+        icon: 'fa-umbrella',
+        color: 'text-rose-600',
+        bg: 'bg-rose-100',
+        desc: '창문 위에 차양을 달아 여름철 뜨거운 직사광선을 시원한 그늘로 가려줘요.',
+        science: '여름의 높은 햇빛은 막고, 겨울의 낮은 온화한 햇빛은 집안으로 들여옵니다.',
+        slots: [
+          { slotId: 'shade_1f_l', label: '1층 좌측 차양', cost: 8, lossCut: 5, cleanPower: 0 },
+          { slotId: 'shade_1f_r', label: '1층 우측 차양', cost: 8, lossCut: 5, cleanPower: 0 },
+          { slotId: 'shade_2f', label: '2층 창문 차양', cost: 8, lossCut: 5, cleanPower: 0 }
+        ]
+      },
+      {
+        id: 'solar',
+        category: 'renewable',
+        name: '지붕 태양광 발전기',
+        icon: 'fa-solar-panel',
+        color: 'text-amber-500',
+        bg: 'bg-amber-100',
+        desc: '지붕에 태양광 패널을 설치해, 햇빛으로 집에서 쓸 깨끗한 전기를 스스로 만들어요.',
+        science: '태양의 빛에너지를 깨끗한 전기에너지로 바꾸어 매연 없이 전기를 생산합니다.',
+        slots: [
+          { slotId: 'sol_1', label: '지붕 1차 패널', cost: 15, lossCut: 2, cleanPower: 30 },
+          { slotId: 'sol_2', label: '지붕 2차 확장 패널', cost: 15, lossCut: 2, cleanPower: 30 }
+        ]
+      },
+      {
+        id: 'green_garden',
+        category: 'air_shade',
+        name: '옥상 정원 & 빗물 화단',
+        icon: 'fa-seedling',
+        color: 'text-emerald-600',
+        bg: 'bg-emerald-100',
+        desc: '옥상 잔디로 지붕 열기를 식히고, 빗물 저금통으로 빗물을 모아 마당 화단을 가꿔요.',
+        science: '식물의 증산작용으로 온도를 낮추고, 빗물 재활용으로 수자원을 절약합니다.',
+        slots: [
+          { slotId: 'garden_roof', label: '2층 옥상 잔디정원', cost: 12, lossCut: 8, cleanPower: 0 },
+          { slotId: 'garden_yard', label: '1층 빗물 저금통 화단', cost: 12, lossCut: 7, cleanPower: 0 }
+        ]
+      },
+      {
+        id: 'hrv',
+        category: 'air_shade',
+        name: '열 교환기 (환기 장치)',
+        icon: 'fa-fan',
+        color: 'text-indigo-600',
+        bg: 'bg-indigo-100',
+        desc: '창문을 열지 않고 환기할 때, 나가는 실내 공기의 온기를 새 공기에 전해주는 똑똑한 환기 장치예요.',
+        science: '열 교환기를 통과하며 빠져나가는 열을 회수하여 실내 온도를 유지합니다.',
+        slots: [
+          { slotId: 'hrv_1f', label: '1층 열 교환기', cost: 12, lossCut: 9, cleanPower: 0 },
+          { slotId: 'hrv_2f', label: '2층 열 교환기', cost: 12, lossCut: 9, cleanPower: 0 }
+        ]
+      },
+      {
+        id: 'geothermal',
+        category: 'renewable',
+        name: '지열 에너지 펌프',
+        icon: 'fa-earth-americas',
+        color: 'text-teal-600',
+        bg: 'bg-teal-100',
+        desc: '사계절 내내 15℃로 일정한 땅속 깊은 열을 끌어올려 여름엔 시원하게, 겨울엔 따뜻하게 냉난방해요.',
+        science: '땅속의 일정한 온도를 활용하여 에너지를 절약하는 지속가능한 재생 에너지입니다.',
+        slots: [
+          { slotId: 'geo_1', label: '지열 펌프 1호기', cost: 15, lossCut: 6, cleanPower: 20 },
+          { slotId: 'geo_2', label: '지열 펌프 2호기(증설)', cost: 15, lossCut: 6, cleanPower: 20 }
+        ]
+      }
+    ];
+
+    // ==========================================
+    // 3. 애플리케이션 상태
+    // ==========================================
+    const state = {
+      earnedCoins: 0,        // 퀴즈로 획득한 총 토큰
+      quizAnswers: {},       // 사용자 퀴즈 선택
+      equippedSlots: new Set(), // 장착된 슬롯 ID들 (예: 'ins_1f', 'win_1f_l')
+      category: 'all',
+      autoRotate: true
+    };
+
+    let scene, camera, renderer, controls;
+    let houseGroup, landscapeGroup;
+    const baseHouseParts = {};
+    const slotMeshes = {};     // 슬롯 ID별 3D 오브젝트 매핑
+    const popAnimState = {};   // 바운스 애니메이션 상태
+    let spinningPropellers = []; // 회전 환기 팬들
+    let pulseSolarMesh = null; // 태양광 펄스 링
+
+    // Web Audio 간편 효과음
+    const Sfx = {
+      ctx: null,
+      init() {
+        if (!this.ctx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (AC) this.ctx = new AC();
+        }
+      },
+      playPop() {
+        try {
+          this.init();
+          if (!this.ctx) return;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(360, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(840, this.ctx.currentTime + 0.12);
+          gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.12);
+        } catch (e) {}
+      },
+      playDetach() {
+        try {
+          this.init();
+          if (!this.ctx) return;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(540, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(220, this.ctx.currentTime + 0.12);
+          gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.12);
+        } catch (e) {}
+      },
+      playCorrect() {
+        try {
+          this.init();
+          if (!this.ctx) return;
+          [523.25, 659.25, 783.99].forEach((f, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.frequency.value = f;
+            const t = this.ctx.currentTime + i * 0.08;
+            gain.gain.setValueAtTime(0.2, t);
+            gain.gain.exponentialRampToValueAtTime(0.01, t + 0.25);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(t);
+            osc.stop(t + 0.25);
+          });
+        } catch (e) {}
+      },
+      playFanfare() {
+        try {
+          this.init();
+          if (!this.ctx) return;
+          [523, 659, 784, 1046].forEach((f, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.frequency.value = f;
+            const t = this.ctx.currentTime + i * 0.08;
+            gain.gain.setValueAtTime(0, t);
+            gain.gain.linearRampToValueAtTime(0.22, t + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(t);
+            osc.stop(t + 0.35);
+          });
+        } catch (e) {}
+      }
+    };
+
+    // ==========================================
+    // 4. Three.js 3D 환경 구축
+    // ==========================================
+    function init3D() {
+      const container = document.getElementById('canvas-container');
+      const canvas = document.getElementById('webgl-canvas');
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xdbeafe);
+      scene.fog = new THREE.FogExp2(0xdbeafe, 0.015);
+
+      camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
+      camera.position.set(13, 10, 14);
+
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.07;
+      controls.maxPolarAngle = Math.PI / 2 - 0.02;
+      controls.minDistance = 7;
+      controls.maxDistance = 32;
+      controls.target.set(0, 2.5, 0);
+
+      // 조명
+      const hemi = new THREE.HemisphereLight(0xffffff, 0x64748b, 0.85);
+      scene.add(hemi);
+
+      const dirLight = new THREE.DirectionalLight(0xfffbeb, 1.4);
+      dirLight.position.set(12, 18, 12);
+      dirLight.castShadow = true;
+      dirLight.shadow.mapSize.width = 2048;
+      dirLight.shadow.mapSize.height = 2048;
+      dirLight.shadow.bias = -0.0006;
+      scene.add(dirLight);
+
+      landscapeGroup = new THREE.Group();
+      scene.add(landscapeGroup);
+      buildGround();
+
+      houseGroup = new THREE.Group();
+      scene.add(houseGroup);
+      buildBaseHouse();
+      buildHighContrastEquipmentSlots();
+
+      window.addEventListener('resize', onResize);
+    }
+
+    function onResize() {
+      const container = document.getElementById('canvas-container');
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    }
+
+    function buildGround() {
+      // 마당 대지 잔디
+      const island = new THREE.Mesh(
+        new THREE.CylinderGeometry(13, 14, 1.0, 36),
+        new THREE.MeshStandardMaterial({ color: 0x86efac, roughness: 0.8 })
+      );
+      island.position.y = -0.5;
+      island.receiveShadow = true;
+      landscapeGroup.add(island);
+
+      // 기초 콘크리트 기단
+      const foundation = new THREE.Mesh(
+        new THREE.BoxGeometry(8.2, 0.35, 6.8),
+        new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.7 })
+      );
+      foundation.position.set(0, 0.17, 0);
+      foundation.receiveShadow = true;
+      landscapeGroup.add(foundation);
+
+      // 디딤돌
+      for (let i = 0; i < 4; i++) {
+        const step = new THREE.Mesh(
+          new THREE.BoxGeometry(1.6 - i * 0.1, 0.05, 0.6),
+          new THREE.MeshStandardMaterial({ color: 0xe2e8f0 })
+        );
+        step.position.set(0, 0.05, 3.5 + i * 0.9);
+        step.receiveShadow = true;
+        landscapeGroup.add(step);
+      }
+
+      // 조경 나무
+      buildTree(-5.2, 0, -2.5);
+      buildTree(5.5, 0, -2.5);
+    }
+
+    function buildTree(x, y, z) {
+      const g = new THREE.Group();
+      const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.2, 0.3, 1.8, 8),
+        new THREE.MeshStandardMaterial({ color: 0x78350f })
+      );
+      trunk.position.y = 0.9;
+      trunk.castShadow = true;
+      g.add(trunk);
+
+      const foliage = new THREE.Mesh(
+        new THREE.ConeGeometry(1.2, 2.2, 8),
+        new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.7 })
+      );
+      foliage.position.y = 2.4;
+      foliage.castShadow = true;
+      g.add(foliage);
+
+      g.position.set(x, y, z);
+      landscapeGroup.add(g);
+    }
+
+    function buildBaseHouse() {
+      // 벽 재질 (기본: 차가운 시멘트 회색 / 단열시: 따뜻한 베이지 크림)
+      baseHouseParts.matWallCold = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.85 });
+      baseHouseParts.matWallWarm = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.65 });
+
+      // 1층 본체
+      const main1F = new THREE.Mesh(new THREE.BoxGeometry(6.8, 3.2, 5.6), baseHouseParts.matWallCold);
+      main1F.position.set(0, 1.8, 0);
+      main1F.castShadow = true;
+      main1F.receiveShadow = true;
+      houseGroup.add(main1F);
+      baseHouseParts.wall1F = main1F;
+
+      // 2층 본체 (왼쪽)
+      const room2F = new THREE.Mesh(new THREE.BoxGeometry(3.4, 2.5, 5.2), baseHouseParts.matWallCold);
+      room2F.position.set(-1.6, 4.6, 0);
+      room2F.castShadow = true;
+      room2F.receiveShadow = true;
+      houseGroup.add(room2F);
+      baseHouseParts.wall2F = room2F;
+
+      // 2층 박공 지붕
+      const roof = new THREE.Mesh(
+        new THREE.ConeGeometry(3.2, 1.6, 4),
+        new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.6 })
+      );
+      roof.rotation.y = Math.PI / 4;
+      roof.position.set(-1.6, 6.6, 0);
+      roof.scale.set(1.0, 1.0, 1.4);
+      roof.castShadow = true;
+      houseGroup.add(roof);
+
+      // 2층 우측 기본 테라스
+      const balcony = new THREE.Mesh(
+        new THREE.BoxGeometry(3.2, 0.2, 5.4),
+        new THREE.MeshStandardMaterial({ color: 0x64748b })
+      );
+      balcony.position.set(1.7, 3.5, 0);
+      houseGroup.add(balcony);
+
+      const fence = new THREE.Mesh(
+        new THREE.BoxGeometry(3.2, 0.7, 0.1),
+        new THREE.MeshStandardMaterial({ color: 0x94a3b8 })
+      );
+      fence.position.set(1.7, 3.95, 2.65);
+      houseGroup.add(fence);
+
+      // 현관문
+      const door = new THREE.Mesh(
+        new THREE.BoxGeometry(1.2, 2.1, 0.1),
+        new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.5 })
+      );
+      door.position.set(0, 1.2, 2.82);
+      houseGroup.add(door);
+
+      // 기본 창문 3개 (미장착 시 얇고 푸르스름한 창문)
+      const makeBasicWin = (x, y, z, w, h) => {
+        const frame = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.08), new THREE.MeshStandardMaterial({ color: 0x64748b }));
+        frame.position.set(x, y, z);
+        houseGroup.add(frame);
+
+        const glass = new THREE.Mesh(new THREE.BoxGeometry(w - 0.15, h - 0.15, 0.04), new THREE.MeshStandardMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.45 }));
+        glass.position.set(x, y, z + 0.02);
+        houseGroup.add(glass);
+      };
+
+      makeBasicWin(-1.8, 1.8, 2.82, 1.6, 1.5); // 1층 좌측
+      makeBasicWin(1.8, 1.8, 2.82, 1.6, 1.5);  // 1층 우측
+      makeBasicWin(-1.6, 4.6, 2.62, 1.6, 1.2); // 2층
+    }
+
+    // ==========================================
+    // 5. 복수 위치 슬롯별 3D 부품 메쉬 생성 (변화가 명확하게 드러나도록 고대비 디자인)
+    // ==========================================
+    function buildHighContrastEquipmentSlots() {
+      // -------------------------------------------------------------
+      // (1) 단열재: 1층 외벽 단열 ('ins_1f') & 2층 외벽 단열 ('ins_2f')
+      // -------------------------------------------------------------
+      const ins1FGroup = new THREE.Group();
+      const pad1F = new THREE.Mesh(
+        new THREE.BoxGeometry(7.3, 3.35, 6.1),
+        new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.5 })
+      );
+      pad1F.position.set(0, 1.8, 0);
+      ins1FGroup.add(pad1F);
+      // 오렌지 코너 단열 기둥 4개
+      [[-3.66, 1.8, -3.06], [3.66, 1.8, -3.06], [-3.66, 1.8, 3.06], [3.66, 1.8, 3.06]].forEach(([cx, cy, cz]) => {
+        const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.35, 3.4, 0.35), new THREE.MeshStandardMaterial({ color: 0xf97316 }));
+        pillar.position.set(cx, cy, cz);
+        ins1FGroup.add(pillar);
+      });
+      ins1FGroup.visible = false;
+      houseGroup.add(ins1FGroup);
+      slotMeshes.ins_1f = ins1FGroup;
+
+      const ins2FGroup = new THREE.Group();
+      const pad2F = new THREE.Mesh(
+        new THREE.BoxGeometry(3.7, 2.65, 5.5),
+        new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.5 })
+      );
+      pad2F.position.set(-1.6, 4.6, 0);
+      ins2FGroup.add(pad2F);
+      // 2층 코너 기둥
+      [[-3.46, 4.6, -2.76], [0.26, 4.6, -2.76], [-3.46, 4.6, 2.76], [0.26, 4.6, 2.76]].forEach(([cx, cy, cz]) => {
+        const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.3, 2.7, 0.3), new THREE.MeshStandardMaterial({ color: 0xf97316 }));
+        pillar.position.set(cx, cy, cz);
+        ins2FGroup.add(pillar);
+      });
+      ins2FGroup.visible = false;
+      houseGroup.add(ins2FGroup);
+      slotMeshes.ins_2f = ins2FGroup;
+
+      // -------------------------------------------------------------
+      // (2) 3중 보온 창문: 3개 위치 ('win_1f_l', 'win_1f_r', 'win_2f')
+      // -------------------------------------------------------------
+      const createTripleWinMesh = (x, y, z, w, h) => {
+        const g = new THREE.Group();
+        // 튼튼한 네온 블루 3중 프레임
+        const frame = new THREE.Mesh(
+          new THREE.BoxGeometry(w + 0.16, h + 0.16, 0.22),
+          new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.4, roughness: 0.2 })
+        );
+        frame.position.set(x, y, z + 0.08);
+        g.add(frame);
+
+        // 반짝이는 사파이어 로이 보온 코팅 유리
+        const glass = new THREE.Mesh(
+          new THREE.BoxGeometry(w - 0.1, h - 0.1, 0.16),
+          new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.85, roughness: 0.05, transparent: true, opacity: 0.9 })
+        );
+        glass.position.set(x, y, z + 0.08);
+        g.add(glass);
+
+        // 창문 모서리 황금 별
+        const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.12), new THREE.MeshBasicMaterial({ color: 0xfde047 }));
+        star.position.set(x + w / 2 - 0.1, y + h / 2 - 0.1, z + 0.2);
+        g.add(star);
+
+        g.visible = false;
+        houseGroup.add(g);
+        return g;
+      };
+
+      slotMeshes.win_1f_l = createTripleWinMesh(-1.8, 1.8, 2.82, 1.6, 1.5);
+      slotMeshes.win_1f_r = createTripleWinMesh(1.8, 1.8, 2.82, 1.6, 1.5);
+      slotMeshes.win_2f = createTripleWinMesh(-1.6, 4.6, 2.62, 1.6, 1.2);
+
+      // -------------------------------------------------------------
+      // (3) 햇빛 차양: 3개 위치 ('shade_1f_l', 'shade_1f_r', 'shade_2f')
+      // -------------------------------------------------------------
+      const createAwningMesh = (x, y, z, w = 2.0) => {
+        const g = new THREE.Group();
+        // 레드-화이트 줄무늬 처마 어닝
+        const tent = new THREE.Mesh(
+          new THREE.BoxGeometry(w, 0.1, 1.2),
+          new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4 })
+        );
+        tent.position.set(0, 0.15, 0.55);
+        tent.rotation.x = 0.35;
+        g.add(tent);
+
+        const bar = new THREE.Mesh(new THREE.BoxGeometry(w + 0.08, 0.08, 0.08), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+        bar.position.set(0, -0.05, 1.1);
+        g.add(bar);
+
+        g.position.set(x, y + 0.95, z);
+        g.visible = false;
+        houseGroup.add(g);
+        return g;
+      };
+
+      slotMeshes.shade_1f_l = createAwningMesh(-1.8, 1.8, 2.82, 2.0);
+      slotMeshes.shade_1f_r = createAwningMesh(1.8, 1.8, 2.82, 2.0);
+      slotMeshes.shade_2f = createAwningMesh(-1.6, 4.6, 2.62, 1.9);
+
+      // -------------------------------------------------------------
+      // (4) 지붕 태양광 발전기: 1차 패널 ('sol_1') & 2차 확장 패널 ('sol_2')
+      // -------------------------------------------------------------
+      // 1차 패널 (아래쪽 열 3장)
+      const sol1Group = new THREE.Group();
+      for (let c = 0; c < 3; c++) {
+        const panel = new THREE.Mesh(
+          new THREE.BoxGeometry(0.95, 0.06, 0.85),
+          new THREE.MeshStandardMaterial({ color: 0x0369a1, metalness: 0.9, roughness: 0.15 })
+        );
+        panel.position.set(-2.5 + c * 0.95, 6.4, 0.8);
+        panel.rotation.x = -Math.PI / 4.5;
+        sol1Group.add(panel);
+
+        const edge = new THREE.LineSegments(
+          new THREE.EdgesGeometry(new THREE.BoxGeometry(0.95, 0.06, 0.85)),
+          new THREE.LineBasicMaterial({ color: 0x38bdf8 })
+        );
+        edge.position.copy(panel.position);
+        edge.rotation.copy(panel.rotation);
+        sol1Group.add(edge);
+      }
+      sol1Group.visible = false;
+      houseGroup.add(sol1Group);
+      slotMeshes.sol_1 = sol1Group;
+
+      // 2차 패널 (위쪽 열 3장 + 에너지 펄스 링)
+      const sol2Group = new THREE.Group();
+      for (let c = 0; c < 3; c++) {
+        const panel = new THREE.Mesh(
+          new THREE.BoxGeometry(0.95, 0.06, 0.85),
+          new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.9, roughness: 0.15 })
+        );
+        panel.position.set(-2.5 + c * 0.95, 6.95, 0.25);
+        panel.rotation.x = -Math.PI / 4.5;
+        sol2Group.add(panel);
+
+        const edge = new THREE.LineSegments(
+          new THREE.EdgesGeometry(new THREE.BoxGeometry(0.95, 0.06, 0.85)),
+          new THREE.LineBasicMaterial({ color: 0x67e8f9 })
+        );
+        edge.position.copy(panel.position);
+        edge.rotation.copy(panel.rotation);
+        sol2Group.add(edge);
+      }
+      // 에너지 링
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.3, 0.55, 16),
+        new THREE.MeshBasicMaterial({ color: 0xfde047, side: THREE.DoubleSide, transparent: true, opacity: 0.85 })
+      );
+      ring.position.set(-1.5, 7.3, 0.8);
+      ring.rotation.x = -Math.PI / 4.5;
+      sol2Group.add(ring);
+      pulseSolarMesh = ring;
+
+      sol2Group.visible = false;
+      houseGroup.add(sol2Group);
+      slotMeshes.sol_2 = sol2Group;
+
+      // -------------------------------------------------------------
+      // (5) 녹색 정원 & 빗물 화단: 옥상 잔디 ('garden_roof') & 마당 빗물화단 ('garden_yard')
+      // -------------------------------------------------------------
+      // 옥상 정원
+      const roofGardenGroup = new THREE.Group();
+      const lawn = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.22, 5.3), new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.9 }));
+      lawn.position.set(1.7, 3.62, 0);
+      roofGardenGroup.add(lawn);
+
+      const fColors = [0xf43f5e, 0xfbbf24, 0xa855f7];
+      for (let p = 0; p < 6; p++) {
+        const flower = new THREE.Mesh(new THREE.DodecahedronGeometry(0.24), new THREE.MeshStandardMaterial({ color: fColors[p % 3] }));
+        flower.position.set(0.6 + (p % 3) * 0.9, 3.9, -1.8 + Math.floor(p / 3) * 1.5);
+        roofGardenGroup.add(flower);
+      }
+      // 미니 파라솔과 벤치
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.8), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+      pole.position.set(2.3, 4.4, 1.5);
+      roofGardenGroup.add(pole);
+      const umbrella = new THREE.Mesh(new THREE.ConeGeometry(0.9, 0.45, 8), new THREE.MeshStandardMaterial({ color: 0xef4444 }));
+      umbrella.position.set(2.3, 5.2, 1.5);
+      roofGardenGroup.add(umbrella);
+      const bench = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.25, 0.4), new THREE.MeshStandardMaterial({ color: 0x78350f }));
+      bench.position.set(2.3, 3.8, 1.0);
+      roofGardenGroup.add(bench);
+
+      roofGardenGroup.visible = false;
+      houseGroup.add(roofGardenGroup);
+      slotMeshes.garden_roof = roofGardenGroup;
+
+      // 마당 빗물 저금통 화단
+      const yardGardenGroup = new THREE.Group();
+      // 빗물 저금통 물탱크 (파란색 원통 + 수도꼭지)
+      const rainTank = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.45, 0.45, 1.4, 16),
+        new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.3, roughness: 0.3 })
+      );
+      rainTank.position.set(-3.2, 0.9, 3.2);
+      yardGardenGroup.add(rainTank);
+
+      const tankLid = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.1, 16), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
+      tankLid.position.set(-3.2, 1.65, 3.2);
+      yardGardenGroup.add(tankLid);
+
+      // 빗물 집수관 파이프
+      const drainPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.2), new THREE.MeshStandardMaterial({ color: 0x64748b }));
+      drainPipe.position.set(-3.4, 2.3, 2.85);
+      yardGardenGroup.add(drainPipe);
+
+      // 아기자기한 마당 꽃밭 화단
+      const yardBed = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.2, 1.0), new THREE.MeshStandardMaterial({ color: 0x15803d }));
+      yardBed.position.set(-1.8, 0.2, 3.5);
+      yardGardenGroup.add(yardBed);
+
+      for (let k = 0; k < 4; k++) {
+        const fl = new THREE.Mesh(new THREE.DodecahedronGeometry(0.18), new THREE.MeshStandardMaterial({ color: fColors[k % 3] }));
+        fl.position.set(-2.6 + k * 0.5, 0.45, 3.5);
+        yardGardenGroup.add(fl);
+      }
+
+      yardGardenGroup.visible = false;
+      houseGroup.add(yardGardenGroup);
+      slotMeshes.garden_yard = yardGardenGroup;
+
+      // -------------------------------------------------------------
+      // (6) 열 교환기 (환기 장치): 1층 환기구 ('hrv_1f') & 2층 환기구 ('hrv_2f')
+      // -------------------------------------------------------------
+      const createHrvUnit = (x, y, z) => {
+        const g = new THREE.Group();
+        const box = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.9, 0.55), new THREE.MeshStandardMaterial({ color: 0x4f46e5, roughness: 0.3 }));
+        box.position.set(0, 0, 0);
+        g.add(box);
+
+        const led = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.1, 0.08), new THREE.MeshBasicMaterial({ color: 0x22c55e }));
+        led.position.set(0, 0.28, 0.3);
+        g.add(led);
+
+        // 회전 환기 팬
+        const fanHub = new THREE.Group();
+        const center = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.06, 12), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+        center.rotation.x = Math.PI / 2;
+        fanHub.add(center);
+
+        for (let b = 0; b < 4; b++) {
+          const blade = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.32, 0.02), new THREE.MeshStandardMaterial({ color: 0x38bdf8 }));
+          blade.position.y = 0.18;
+          blade.rotation.z = (Math.PI / 2) * b;
+          fanHub.add(blade);
+        }
+        fanHub.position.set(0, -0.05, 0.3);
+        g.add(fanHub);
+        spinningPropellers.push(fanHub);
+
+        g.position.set(x, y, z);
+        g.visible = false;
+        houseGroup.add(g);
+        return g;
+      };
+
+      slotMeshes.hrv_1f = createHrvUnit(0, 3.1, 2.9);     // 현관 위
+      slotMeshes.hrv_2f = createHrvUnit(-1.6, 5.6, 2.7);  // 2층 다락방 벽면
+
+      // -------------------------------------------------------------
+      // (7) 지열 에너지 펌프: 1호기 ('geo_1') & 2호기 증설 ('geo_2')
+      // -------------------------------------------------------------
+      // 1호기 (청록색 펌프 타워 + 디지털 온도 전광판 + 파란색 냉수 파이프)
+      const geo1Group = new THREE.Group();
+      const pumpTower1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.6, 0.9), new THREE.MeshStandardMaterial({ color: 0x0e7490 }));
+      pumpTower1.position.set(3.6, 0.9, -1.8);
+      geo1Group.add(pumpTower1);
+
+      const led15 = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.3, 0.06), new THREE.MeshBasicMaterial({ color: 0x22d3ee }));
+      led15.position.set(3.6, 1.25, -1.32);
+      geo1Group.add(led15);
+
+      const pipeBlue = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.1, 0.1, 4.2, 12),
+        new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x0891b2, emissiveIntensity: 0.8 })
+      );
+      pipeBlue.position.set(3.4, -1.6, -1.8);
+      geo1Group.add(pipeBlue);
+
+      geo1Group.visible = false;
+      houseGroup.add(geo1Group);
+      slotMeshes.geo_1 = geo1Group;
+
+      // 2호기 증설 (온수 순환 타워 + 빨간색 온수 파이프)
+      const geo2Group = new THREE.Group();
+      const pumpTower2 = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.4, 0.8), new THREE.MeshStandardMaterial({ color: 0x155e75 }));
+      pumpTower2.position.set(4.8, 0.8, -1.8);
+      geo2Group.add(pumpTower2);
+
+      const pipeRed = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.1, 0.1, 4.2, 12),
+        new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0xe11d48, emissiveIntensity: 0.8 })
+      );
+      pipeRed.position.set(4.8, -1.6, -1.8);
+      geo2Group.add(pipeRed);
+
+      geo2Group.visible = false;
+      houseGroup.add(geo2Group);
+      slotMeshes.geo_2 = geo2Group;
+    }
+
+    // ==========================================
+    // 6. 렌더 루프 및 애니메이션
+    // ==========================================
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // 천천히 회전
+      if (state.autoRotate) {
+        houseGroup.rotation.y += 0.003;
+        landscapeGroup.rotation.y += 0.003;
+      }
+
+      // 환기 로봇 팬 회전 (장착된 경우)
+      spinningPropellers.forEach(prop => {
+        prop.rotation.z += 0.15;
+      });
+
+      // 태양광 펄스 링
+      if (pulseSolarMesh && state.equippedSlots.has('sol_2')) {
+        const s = 1.0 + Math.sin(Date.now() * 0.008) * 0.22;
+        pulseSolarMesh.scale.set(s, s, 1);
+      }
+
+      // 통통 튀는 바운스 애니메이션 (Scale Pop)
+      Object.keys(popAnimState).forEach(slotId => {
+        const anim = popAnimState[slotId];
+        const mesh = slotMeshes[slotId];
+        if (mesh && anim.active) {
+          anim.cur += (anim.target - anim.cur) * 0.18;
+          mesh.scale.set(anim.cur, anim.cur, anim.cur);
+          if (Math.abs(anim.target - anim.cur) < 0.01) {
+            anim.cur = anim.target;
+            mesh.scale.set(anim.target, anim.target, anim.target);
+            anim.active = false;
+          }
+        }
+      });
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    // ==========================================
+    // 7. 계산 및 UI 동기화
+    // ==========================================
+    function calculateMetrics() {
+      let cutTotal = 0;
+      let powerTotal = 0;
+      let spent = 0;
+
+      PASSIVE_ITEMS.forEach(item => {
+        item.slots.forEach(slot => {
+          if (state.equippedSlots.has(slot.slotId)) {
+            cutTotal += slot.lossCut;
+            powerTotal += slot.cleanPower;
+            spent += slot.cost;
+          }
+        });
+      });
+
+      const remainingCoins = Math.max(0, state.earnedCoins - spent);
+      const lossPercent = Math.max(8, 100 - cutTotal);
+      const savingsRate = Math.min(98, Math.round(cutTotal * 0.8 + powerTotal * 0.35));
+      const indoorTemp = (14.5 + cutTotal * 0.11 + powerTotal * 0.02).toFixed(1);
+
+      return {
+        remainingCoins,
+        lossPercent,
+        savingsRate,
+        powerTotal,
+        spent,
+        indoorTemp
+      };
+    }
+
+    function updateUI() {
+      const metrics = calculateMetrics();
+
+      // 코인 및 효율 수치
+      document.getElementById('token-display').textContent = metrics.remainingCoins;
+      document.getElementById('foot-coins').textContent = `${metrics.remainingCoins} 토큰`;
+      document.getElementById('foot-savings').textContent = `${metrics.savingsRate}%`;
+
+      const totalSlots = PASSIVE_ITEMS.reduce((acc, item) => acc + item.slots.length, 0);
+      document.getElementById('shop-count-badge').textContent = `장착 ${state.equippedSlots.size} / ${totalSlots} 곳`;
+
+      // 실내 온도 뱃지
+      const tempBadge = document.getElementById('hud-temp-badge');
+      if (metrics.indoorTemp >= 21) {
+        tempBadge.textContent = `실내 ${metrics.indoorTemp}℃ (따뜻하고 아늑해요! 😊)`;
+        tempBadge.className = 'text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/40 text-emerald-200 border border-emerald-400/50';
+      } else if (metrics.indoorTemp >= 18) {
+        tempBadge.textContent = `실내 ${metrics.indoorTemp}℃ (온기가 돌아요! 👍)`;
+        tempBadge.className = 'text-xs font-bold px-2 py-0.5 rounded-full bg-amber-500/40 text-amber-200 border border-amber-400/50';
+      } else {
+        tempBadge.textContent = `실내 ${metrics.indoorTemp}℃ (아직 추워요 ❄️)`;
+        tempBadge.className = 'text-xs font-bold px-2 py-0.5 rounded-full bg-rose-500/40 text-rose-200 border border-rose-400/50';
+      }
+
+      // HUD 게이지
+      document.getElementById('hud-loss-bar').style.width = `${metrics.lossPercent}%`;
+      document.getElementById('hud-loss-text').textContent = `${metrics.lossPercent}% (${metrics.lossPercent <= 25 ? '열 손실 완전 차단!' : metrics.lossPercent <= 60 ? '양호' : '열 손실 심함'})`;
+
+      document.getElementById('hud-clean-bar').style.width = `${Math.min(100, (metrics.powerTotal / 80) * 100)}%`;
+      document.getElementById('hud-clean-text').textContent = `${metrics.powerTotal} kWh`;
+
+      // 3D 슬롯 메쉬 가시성 동기화
+      Object.keys(slotMeshes).forEach(slotId => {
+        const mesh = slotMeshes[slotId];
+        if (mesh) {
+          mesh.visible = state.equippedSlots.has(slotId);
+        }
+      });
+
+      // 1층/2층 벽 단열재 장착에 따른 기본 벽 색상 변화
+      const has1FIns = state.equippedSlots.has('ins_1f');
+      const has2FIns = state.equippedSlots.has('ins_2f');
+      baseHouseParts.wall1F.material = has1FIns ? baseHouseParts.matWallWarm : baseHouseParts.matWallCold;
+      baseHouseParts.wall2F.material = has2FIns ? baseHouseParts.matWallWarm : baseHouseParts.matWallCold;
+
+      renderShopItems();
+    }
+
+    // ==========================================
+    // 8. 도구함 아이템 카드 렌더링 (위치별 개별 장착/해제 UI)
+    // ==========================================
+    function changeCategory(cat) {
+      state.category = cat;
+      document.querySelectorAll('.cat-btn').forEach(btn => {
+        btn.className = 'cat-btn py-1 rounded-lg text-slate-600 hover:text-slate-900 transition';
+      });
+      const activeBtn = document.getElementById(`tab-${cat}`);
+      if (activeBtn) {
+        activeBtn.className = 'cat-btn py-1 rounded-lg bg-white text-emerald-800 shadow-sm transition font-black';
+      }
+      renderShopItems();
+    }
+
+    function renderShopItems() {
+      const container = document.getElementById('items-list');
+      const metrics = calculateMetrics();
+
+      const filtered = PASSIVE_ITEMS.filter(p => {
+        if (state.category === 'all') return true;
+        return p.category === state.category;
+      });
+
+      container.innerHTML = filtered.map(item => {
+        const equippedCountInItem = item.slots.filter(s => state.equippedSlots.has(s.slotId)).length;
+        const allEquipped = equippedCountInItem === item.slots.length;
+
+        const slotsHtml = item.slots.map(slot => {
+          const isSlotEquipped = state.equippedSlots.has(slot.slotId);
+          const canAfford = metrics.remainingCoins >= slot.cost || isSlotEquipped;
+
+          return `
+            <div class="flex items-center justify-between py-1.5 px-2.5 rounded-xl text-xs ${isSlotEquipped ? 'bg-emerald-100/80 border border-emerald-300 font-bold' : 'bg-slate-50 border border-slate-200'}">
+              <div class="flex items-center gap-1.5">
+                <i class="fa-solid ${isSlotEquipped ? 'fa-check-circle text-emerald-600' : 'fa-circle-dot text-slate-400'} text-xs"></i>
+                <span class="${isSlotEquipped ? 'text-emerald-950 font-bold' : 'text-slate-700'}">${slot.label}</span>
+                <span class="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 font-outfit font-bold">
+                  ${slot.cost} 토큰
+                </span>
+              </div>
+              <button 
+                onclick="toggleSlot('${slot.slotId}', '${item.id}')"
+                ${!canAfford && !isSlotEquipped ? 'disabled' : ''}
+                class="px-2.5 py-1 rounded-lg text-[11px] font-bold font-jua transition ${
+                  isSlotEquipped 
+                    ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-xs' 
+                    : canAfford 
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm' 
+                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                }">
+                ${isSlotEquipped ? '해제' : '장착'}
+              </button>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="p-3 rounded-2xl border transition-all ${
+            equippedCountInItem > 0 
+              ? 'bg-emerald-50/90 border-emerald-300 shadow-md ring-1 ring-emerald-400/20' 
+              : 'bg-white border-slate-200 hover:border-slate-300'
+          }">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div class="flex items-center gap-2.5">
+                <div class="${item.bg} ${item.color} w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 text-base shadow-sm border border-black/5">
+                  <i class="fa-solid ${item.icon}"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <h3 class="text-xs sm:text-sm font-bold font-jua text-slate-800 leading-tight">${item.name}</h3>
+                    <span class="text-[10px] font-bold px-1.5 py-0.2 rounded-full ${equippedCountInItem > 0 ? 'bg-emerald-200 text-emerald-900' : 'bg-slate-100 text-slate-500'}">
+                      ${equippedCountInItem}/${item.slots.length}
+                    </span>
+                  </div>
+                  <p class="text-[10px] text-slate-500 leading-none mt-0.5">${item.desc}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 각 위치별 장착 슬롯 리스트 -->
+            <div class="space-y-1 mt-2">
+              ${slotsHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.toggleSlot = function(slotId, itemId) {
+      const item = PASSIVE_ITEMS.find(p => p.id === itemId);
+      if (!item) return;
+      const slot = item.slots.find(s => s.slotId === slotId);
+      if (!slot) return;
+
+      if (state.equippedSlots.has(slotId)) {
+        // 해제
+        state.equippedSlots.delete(slotId);
+        Sfx.playDetach();
+        showToast(`[${slot.label}] 해제 완료! 토큰을 돌려받았어요.`, 'fa-rotate-left');
+      } else {
+        // 장착
+        const metrics = calculateMetrics();
+        if (metrics.remainingCoins < slot.cost) {
+          showToast('토큰이 부족해요! 퀴즈를 풀거나 다른 부품을 먼저 해제해 보세요.', 'fa-triangle-exclamation');
+          return;
+        }
+
+        state.equippedSlots.add(slotId);
+        Sfx.playPop();
+
+        // 바운스 애니메이션 시작
+        popAnimState[slotId] = { cur: 0.1, target: 1.0, active: true };
+        const mesh = slotMeshes[slotId];
+        if (mesh) mesh.scale.set(0.1, 0.1, 0.1);
+
+        // 상단 배너 및 과학 팁 갱신
+        showEquipBanner(`${item.name} - ${slot.label}`);
+        document.getElementById('hud-tip').textContent = item.science;
+        showToast(`[${slot.label}] 장착 완료! 3D 화면을 확인해 보세요!`, 'fa-sparkles');
+      }
+
+      updateUI();
+    };
+
+    function showEquipBanner(name) {
+      const banner = document.getElementById('equip-banner');
+      const bannerText = document.getElementById('equip-banner-text');
+      bannerText.textContent = `✨ [${name}] 장착 완료!`;
+      banner.classList.remove('opacity-0', 'scale-90');
+      banner.classList.add('opacity-100', 'scale-100');
+
+      clearTimeout(window.bannerTimer);
+      window.bannerTimer = setTimeout(() => {
+        banner.classList.remove('opacity-100', 'scale-100');
+        banner.classList.add('opacity-0', 'scale-90');
+      }, 2400);
+    }
+
+    function showToast(msg, icon = 'fa-circle-check') {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-msg');
+      const toastIcon = document.getElementById('toast-icon');
+
+      toastMsg.textContent = msg;
+      toastIcon.className = `fa-solid ${icon} text-emerald-400`;
+
+      toast.classList.remove('opacity-0', 'scale-95');
+      toast.classList.add('opacity-100', 'scale-100');
+
+      clearTimeout(window.toastTimer);
+      window.toastTimer = setTimeout(() => {
+        toast.classList.remove('opacity-100', 'scale-100');
+        toast.classList.add('opacity-0', 'scale-95');
+      }, 2000);
+    }
+
+    // ==========================================
+    // 9. 퀴즈 시스템 모달 구현 (4문항 * 25점 = 100토큰)
+    // ==========================================
+    function renderQuizModal() {
+      const container = document.getElementById('quiz-questions-box');
+
+      container.innerHTML = QUIZ_DATA.map((q, idx) => {
+        const userChoice = state.quizAnswers[q.id];
+        const isAnswered = typeof userChoice === 'number';
+        const isCorrect = isAnswered && q.options[userChoice].isCorrect;
+
+        const optionsHtml = q.options.map((opt, optIdx) => {
+          let btnClass = 'p-2.5 rounded-xl border text-xs text-left transition flex items-center justify-between ';
+          if (!isAnswered) {
+            btnClass += 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-800 cursor-pointer';
+          } else if (userChoice === optIdx) {
+            btnClass += opt.isCorrect
+              ? 'bg-emerald-100 border-emerald-400 text-emerald-950 font-bold ring-2 ring-emerald-400/50'
+              : 'bg-rose-100 border-rose-400 text-rose-950 font-bold ring-2 ring-rose-400/50';
+          } else if (opt.isCorrect) {
+            btnClass += 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold';
+          } else {
+            btnClass += 'bg-slate-50 border-slate-100 text-slate-400 opacity-60';
+          }
+
+          return `
+            <button 
+              type="button"
+              onclick="selectQuizAnswer(${q.id}, ${optIdx})"
+              class="${btnClass}">
+              <span>${optIdx + 1}. ${opt.text}</span>
+              ${isAnswered && opt.isCorrect ? '<i class="fa-solid fa-circle-check text-emerald-600 ml-2"></i>' : ''}
+              ${isAnswered && userChoice === optIdx && !opt.isCorrect ? '<i class="fa-solid fa-circle-xmark text-rose-600 ml-2"></i>' : ''}
+            </button>
+          `;
+        }).join('');
+
+        return `
+          <div class="p-3.5 rounded-2xl border ${isAnswered ? (isCorrect ? 'bg-emerald-50/50 border-emerald-300' : 'bg-rose-50/50 border-rose-300') : 'bg-white border-slate-200'}">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <span class="text-xs font-black text-slate-800 leading-snug">${q.question}</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${isAnswered ? (isCorrect ? 'bg-emerald-200 text-emerald-900' : 'bg-rose-200 text-rose-900') : 'bg-slate-100 text-slate-600'}">
+                ${isAnswered ? (isCorrect ? '정답! +25점' : '오답') : '25점'}
+              </span>
+            </div>
+            <div class="space-y-1.5">
+              ${optionsHtml}
+            </div>
+            ${isAnswered ? `
+              <div class="mt-2.5 p-2 rounded-xl text-[11px] leading-relaxed ${isCorrect ? 'bg-emerald-100/70 text-emerald-900' : 'bg-rose-100/70 text-rose-900'}">
+                <i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i>
+                <span>${q.explanation}</span>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+
+      // 미리보기 점수 계산
+      let currentScore = 0;
+      QUIZ_DATA.forEach(q => {
+        const choice = state.quizAnswers[q.id];
+        if (typeof choice === 'number' && q.options[choice].isCorrect) {
+          currentScore += 25;
+        }
+      });
+      document.getElementById('quiz-score-preview').textContent = currentScore;
+    }
+
+    window.selectQuizAnswer = function(qId, optIdx) {
+      state.quizAnswers[qId] = optIdx;
+      const q = QUIZ_DATA.find(item => item.id === qId);
+      if (q && q.options[optIdx].isCorrect) {
+        Sfx.playCorrect();
+      } else {
+        Sfx.playDetach();
+      }
+      renderQuizModal();
+    };
+
+    function submitQuiz() {
+      let finalScore = 0;
+      QUIZ_DATA.forEach(q => {
+        const choice = state.quizAnswers[q.id];
+        if (typeof choice === 'number' && q.options[choice].isCorrect) {
+          finalScore += 25;
+        }
+      });
+
+      // 이미 부여받은 토큰보다 높거나 새 점수로 업데이트 (최대 100토큰)
+      state.earnedCoins = finalScore;
+      updateUI();
+
+      if (finalScore === 100) {
+        Sfx.playFanfare();
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+        showToast('와우! 4문제를 모두 맞혀 100토큰을 획득했어요! 🏆', 'fa-trophy');
+      } else if (finalScore > 0) {
+        Sfx.playPop();
+        showToast(`${finalScore}토큰을 획득했어요! 부족하면 언제든 다시 풀 수 있어요.`, 'fa-coins');
+      } else {
+        showToast('문제를 풀고 정답을 맞혀 토큰을 획득해 보세요!', 'fa-circle-question');
+      }
+
+      document.getElementById('quiz-modal').classList.add('hidden');
+    }
+
+    // ==========================================
+    // 10. 보고서 모달
+    // ==========================================
+    function openReportModal() {
+      const metrics = calculateMetrics();
+      const modal = document.getElementById('report-modal');
+
+      document.getElementById('rep-savings').textContent = `${metrics.savingsRate}%`;
+      const co2 = Math.round(metrics.savingsRate * 18.5);
+      const trees = Math.round(co2 / 6.6); // 1그루당 6.6kg 흡수
+      document.getElementById('rep-carbon').textContent = `${co2} kg`;
+      document.getElementById('rep-trees').textContent = `${trees} 그루`;
+
+      const stamp = document.getElementById('report-stamp');
+      if (metrics.savingsRate >= 75) {
+        stamp.textContent = '에너지 챔피언 1등급! 🏆';
+        stamp.className = 'absolute -top-1 right-0 rotate-12 bg-emerald-600 text-white font-jua px-3 py-1 rounded-xl text-xs border-2 border-dashed border-white shadow-md';
+        Sfx.playFanfare();
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+      } else if (metrics.savingsRate >= 45) {
+        stamp.textContent = '우수 에코홈 2등급! ⭐';
+        stamp.className = 'absolute -top-1 right-0 rotate-12 bg-teal-600 text-white font-jua px-3 py-1 rounded-xl text-xs border-2 border-dashed border-white shadow-md';
+      } else {
+        stamp.textContent = '새싹 에코홈 3등급! 🌱';
+        stamp.className = 'absolute -top-1 right-0 rotate-12 bg-amber-600 text-white font-jua px-3 py-1 rounded-xl text-xs border-2 border-dashed border-white shadow-md';
+      }
+
+      // 장착한 슬롯 목록 태그 채우기
+      const tagsBox = document.getElementById('rep-tags-box');
+      if (state.equippedSlots.size === 0) {
+        tagsBox.innerHTML = `<span class="text-xs text-slate-400 italic">아직 장착한 부품이 없어요.</span>`;
+      } else {
+        const labels = [];
+        PASSIVE_ITEMS.forEach(item => {
+          item.slots.forEach(slot => {
+            if (state.equippedSlots.has(slot.slotId)) {
+              labels.push(`${item.name} (${slot.label})`);
+            }
+          });
+        });
+        tagsBox.innerHTML = labels.map(txt => `
+          <span class="bg-emerald-100 text-emerald-900 text-[11px] font-bold px-2 py-0.5 rounded-lg border border-emerald-300">
+            <i class="fa-solid fa-check text-emerald-600 mr-1"></i>${txt}
+          </span>
+        `).join('');
+      }
+
+      // 선생님 피드백
+      const fbBox = document.getElementById('rep-feedback-box');
+      if (metrics.savingsRate >= 75) {
+        fbBox.innerHTML = `🎉 <strong>완벽한 에코하우스 완성!</strong><br>
+        벽 단열재와 3중창으로 열의 손실을 철저히 막고, 열 교환기와 태양광/지열 재생 에너지까지 알뜰하게 수확했어요. 소나무 <strong>${trees}그루</strong>를 심은 것과 같은 훌륭한 지구 지킴이 활동을 해냈습니다!`;
+      } else if (metrics.savingsRate >= 45) {
+        fbBox.innerHTML = `👏 <strong>참 잘했어요! 온기를 지키는 훌륭한 친환경 집이에요!</strong><br>
+        에너지 절약을 잘 실천하고 있어요. 남은 토큰으로 지붕 태양광이나 지열 펌프를 더 확장해서 깨끗한 에너지를 스스로 만들어 보세요!`;
+      } else {
+        fbBox.innerHTML = `💡 <strong>선생님의 힌트: '단열재'와 '3중창'을 먼저 설치해 보세요!</strong><br>
+        에코하우스 과학의 기본은 밖으로 달아나는 열부터 꽉 잡는 것이랍니다. 1·2층 벽에 단열재를 입혀보세요!`;
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    // ==========================================
+    // 11. 이벤트 리스너 설정
+    // ==========================================
+    function setupEventListeners() {
+      // 3D 뷰 버튼 (단순화)
+      document.getElementById('btn-view-all').addEventListener('click', () => {
+        camera.position.set(13, 10, 14);
+        controls.target.set(0, 2.5, 0);
+        showToast('집 전체를 한눈에 보는 시점으로 맞췄어요.');
+      });
+
+      document.getElementById('btn-view-front').addEventListener('click', () => {
+        camera.position.set(0, 4.5, 12.5);
+        controls.target.set(0, 2.5, 0);
+        showToast('집 앞면 정면 시점으로 맞췄어요.');
+      });
+
+      const rotBtn = document.getElementById('btn-auto-rotate');
+      rotBtn.addEventListener('click', () => {
+        state.autoRotate = !state.autoRotate;
+        document.getElementById('rotate-label').textContent = state.autoRotate ? '회전 중지' : '천천히 회전';
+        rotBtn.classList.toggle('bg-emerald-50', state.autoRotate);
+      });
+
+      // 전체 초기화
+      document.getElementById('btn-reset-everything').addEventListener('click', () => {
+        state.equippedSlots.clear();
+        Sfx.playDetach();
+        updateUI();
+        showToast('모든 부품을 처음 상태로 되돌렸어요.');
+      });
+
+      // 보고서 모달
+      document.getElementById('btn-open-report').addEventListener('click', openReportModal);
+      document.getElementById('btn-close-report').addEventListener('click', () => {
+        document.getElementById('report-modal').classList.add('hidden');
+      });
+
+      // 교과서 원리 모달
+      const gModal = document.getElementById('guide-modal');
+      document.getElementById('btn-guide').addEventListener('click', () => gModal.classList.remove('hidden'));
+      document.getElementById('btn-close-guide').addEventListener('click', () => gModal.classList.add('hidden'));
+      document.getElementById('btn-close-guide-2').addEventListener('click', () => gModal.classList.add('hidden'));
+
+      // 퀴즈 모달
+      const qModal = document.getElementById('quiz-modal');
+      document.getElementById('btn-open-quiz').addEventListener('click', () => {
+        renderQuizModal();
+        qModal.classList.remove('hidden');
+      });
+      document.getElementById('btn-close-quiz').addEventListener('click', () => qModal.classList.add('hidden'));
+      document.getElementById('btn-submit-quiz').addEventListener('click', submitQuiz);
+    }
+
+    // ==========================================
+    // 12. 초기 실행
+    // ==========================================
+    window.onload = function () {
+      init3D();
+      setupEventListeners();
+      renderQuizModal();
+      updateUI();
+      animate();
+
+      // 시작 시 자동으로 퀴즈 풀기 모달 열기 안내
+      document.getElementById('quiz-modal').classList.remove('hidden');
+    };
+  </script>
+</body>
+</html>
